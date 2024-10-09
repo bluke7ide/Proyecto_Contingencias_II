@@ -1,0 +1,4 @@
+```{r}
+# Considero apropiado buscar una plantilla html formal, al menos para el futuro también
+```
+
