@@ -17,6 +17,7 @@ output:
 source("cod/setup.R")
 ```
 
+Esto intenta realizar las fuerzas de transición de empeorarse
 ```{r}
 mucar <- function(x, p1, p2, p3, p4, p5, p6){
   if(x <=65){
@@ -28,15 +29,17 @@ mucar <- function(x, p1, p2, p3, p4, p5, p6){
 }
 ```
 
+Lee el excel, hecho a mano 
 ```{r}
 readdata <- function(sheet){
   data <- read_excel("data/DataPaper.xlsx", sheet = sheet)
-  data[, -1] <- lapply(data[, -1], as.double)
-  data[is.na(data)] <- 0 
+  data <- sapply(data, as.double)
+  colnames(data)[1] <- "x"
+  data[is.na(data)] <- 0
   lista <- list(Able = data.frame(data[2:8,]),
                 Mild = data.frame(data[10:16,]),
                 Moderate = data.frame(data[18:24,]),
-                Severe = data.frame(data[26:32,]), 
+                Severe = data.frame(data[26:32,]),
                 Profound = data.frame(data[34:40,]))
   return(lista)
 }
@@ -49,7 +52,18 @@ MaleMu <- readdata("MaleMu")
 FemaleMu <- readdata("FemaleMu")
 ```
 
+Intenta practicar con las probabilidades para poder interpolarlas
+```{r}
+piv <- MaleProb[["Able"]]
+piv[8,] <- c(119, 0, 0, 0, 0, 0, 1)
+modelo <- data.frame(x = 20:119)
+modelo <- left_join(modelo, piv, by = "x")
 
+modelo[1:61, 2] <- as.double(spline(piv[1:7, 1], piv[1:7, 2], xout = 20:80)$y)
+modelo[61:99, 2] <- as.double(spline(piv[6:8, 1], piv[6:8, 2], xout = 80:118)$y)
+plot(modelo$Able)
+```
+Not convinced
 
 
 
