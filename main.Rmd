@@ -65,7 +65,42 @@ plot(modelo$Able)
 ```
 Not convinced
 
+```{r}
+source("prob_estim.R")
+prob_estim(1, 20, 0, 1)
+```
 
+```{r}
+red_factor <- function(x, t, sex){
+  if (sex == 1) {
+    c <- 0.163
+    h <- 0.403
+    k <- 0.303
+  } else {
+    c <- 0.149
+    h <- 0.355
+    k <- 0.293
+  }
+  if(x > 65){
+    alpha <- 1 + (1-c)*(x-125)/65
+    f <- ((135-x)*h + (x-65)*k)/65
+  } else {
+    alpha <- c
+    f <- h
+  }
+  return(alpha + (1-alpha)*(1-f)^(t/20))
+}
+```
+
+```{r}
+add_mortality <- function(x, n){
+  return(0.15*max(n-2,0)/((1+1.1^{50-x})*5))
+}
+```
+
+```{r}
+
+```
 
 
 
