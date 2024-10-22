@@ -23,3 +23,7 @@ table_males$`T_{x}` <- gsub(',','', table_males$`T_{x}`)
 table_females$`T_{x}` <- gsub(',','', table_females$`T_{x}`)
 table_males <- as.data.frame(sapply(table_males, as.double))
 table_females <- as.data.frame(sapply(table_females, as.double))
+
+O_Data <- list(MaleProb, FemaleProb, MaleMu, FemaleMu)
+Aus_tables <- list(table_males, table_females)
+rm(MaleProb, FemaleProb, MaleMu, FemaleMu, table_males, table_females)
