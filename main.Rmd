@@ -23,7 +23,7 @@ source("cod/load_database.R")
 
 ```{r}
 source("cod/prob_estim.R")
-prob_estim(1, 20, 0, 1)
+prob_estim(20, 1, 0, 1)
 ```
 ```{r}
 red_factor_mort(20,60,1)
@@ -59,37 +59,16 @@ red_factor_rest(65, 53, 1, 1)
 
 ```{r}
 prob <- function(x, n){
-  return((table_males$`q_{x}`[x+1]) + add_mortality(x,n))
+  return((table_males$`q_{x}`[x+1]) + add_mort(x,n))
 }
 ```
+
 # Empezar las tablas
 
-## Profound
 ```{r}
-Profound <- data.frame(x = 0:119, Severe = 0.05, Profound = 0, Dead = 0)
-Profound$Dead[1:110] <- sapply(0:109, function(x) prob(x,4))
-Profound$Severe[110:120] <- seq(0.05,0,length.out = 11)
-Profound$Dead[120] <- 1
-interpol <- smooth.spline(c(Profound$x[100:110], 120), c(Profound$Dead[100:110], 1))
-Profound$Dead[110:119] <- predict(interpol, 110:119)$y
-Profound$Profound <- 1 - Profound$Severe - Profound$Dead
+coef_red <- seq(1,0,length.out = 11)
+source("cod/prob_table.R")
 ```
-
-## Severe
-```{r}
-Severe <- data.frame(x = 0:119, Moderate = 0.1, Severe = 0, Profound = 0, Dead = 0)
-Severe$Dead[1:110] <- sapply(0:109,function(x) (table_males$`q_{x}`[x+1]) + add_mortality(x,3))
-Severe$Dead[120] <- 1
-interpol <- smooth.spline(c(Severe$x[100:110], 120), c(Severe$Dead[100:110], 1))
-Severe$Dead[110:119] <- predict(interpol, 110:119)$y
-
-Severe$Moderate[110:120] <- seq(0.1,0,length.out = 11)
-# Profound$Profound <- 1 - Profound$Severe - Profound$Dead
-```
-
-
-
-
 
 
 

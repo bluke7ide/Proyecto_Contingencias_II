@@ -1,9 +1,25 @@
-prob_estim <- function(sex, x, ini, end){
-  
-  new_car <- function(x, alpha, A, B, C, D, E){
-    core <- A + (D-A)/(A+B^{C-x})
-    return(alpha*(core*(1-exp(-((x-E)/4)^2)/3)))
+new_car <- function(x, sex){
+  if(sex ==1){
+    alpha <- 7.95952
+    A <- 0.000959
+    B <- 1.0959238
+    C <- 93.47352
+    D <- 0.119353
+    E <- 68.873716
+  } else {
+    alpha <- 7.95978
+    A <- 0.000927
+    B <- 1.102981
+    C <- 93.4994
+    D <- 0.11935
+    E <- 68.87697
   }
+  
+  core <- A + (D-A)/(1+B^{C-x})
+  return(alpha*(core*(1-exp(-((x-E)/4)^2)/3)))
+}
+
+prob_estim <- function(x, sex, ini, end){
   
   severity <- function(x, w, P, Q, R, n){
     f <- P + (1-P)/(1+Q^(R-x))
@@ -15,24 +31,14 @@ prob_estim <- function(sex, x, ini, end){
   }
   
   if(sex == 1){
-    alpha <- 7.95952
-    A <- 0.000959
-    B <- 1.0959238
-    C <- 93.47352
-    D <- 0.119353
-    E <- 68.873716
+
     P <- 0.5129
     Q <- 1.4268
     R <- 85.0082
     w <- c(1, 0.6684, 0.6732, 1.1445)
     factor <- 1.195
   } else {
-    alpha <- 7.95978
-    A <- 0.000927
-    B <- 1.102981
-    C <- 93.4994
-    D <- 0.11935
-    E <- 68.87697
+
     P <- 0.3453
     Q <- 1.2513
     R <- 85.4748
@@ -40,7 +46,7 @@ prob_estim <- function(sex, x, ini, end){
     factor <- 1.25
   }
 
-  p1 <- new_car(x, alpha, A, B, C, D, E)
+  p1 <- new_car(x, sex)
   p2 <- severity(x, w, P, Q, R, end)
   return(p1*p2*factor^{ini})
 }
@@ -65,7 +71,8 @@ red_factor_mort <- function(x, t, sex){
   return(alpha + (1-alpha)*(1-f)^(t/20))
 }
 
-add_mortality <- function(x, n){
+add_mort <- function(x, n){
+  # Checked
   return(0.15*max(n-2,0)/((1+1.1^{50-x})*5))
 }
 
