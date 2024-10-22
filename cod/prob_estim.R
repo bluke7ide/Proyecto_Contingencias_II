@@ -11,7 +11,7 @@ prob_estim <- function(sex, x, ini, end){
     for( i in 1:4){
       scale <- scale + w[i]*f^(i-1)
     }
-    return(w[n]*f^(n-1)/scale)
+    return((w[n]*f^(n-1))/scale)
   }
   
   if(sex == 1){
@@ -44,3 +44,42 @@ prob_estim <- function(sex, x, ini, end){
   p2 <- severity(x, w, P, Q, R, end)
   return(p1*p2*factor^{ini})
 }
+
+red_factor_mort <- function(x, t, sex){
+  if (sex == 1) {
+    c <- 0.163
+    h <- 0.403
+    k <- 0.303
+  } else {
+    c <- 0.149
+    h <- 0.355
+    k <- 0.293
+  }
+  if(x > 65){
+    alpha <- 1 + (1-c)*(x-125)/65
+    f <- ((135-x)*h + (x-65)*k)/65
+  } else {
+    alpha <- c
+    f <- h
+  }
+  return(alpha + (1-alpha)*(1-f)^(t/20))
+}
+
+add_mortality <- function(x, n){
+  return(0.15*max(n-2,0)/((1+1.1^{50-x})*5))
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

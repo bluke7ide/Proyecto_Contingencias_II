@@ -11,79 +11,40 @@ output:
     self_contained: true
     highlight: tango
 ---
-
 # Librerías
 ```{r}
 source("cod/setup.R")
 ```
 
-Esto intenta realizar las fuerzas de transición de empeorarse
-```{r}
-mucar <- function(x, p1, p2, p3, p4, p5, p6){
-  if(x <=65){
-    return((p1+p2*p3^x)/(1+p4*p3^x+p5*p3^(-x))+p6)
-  } else {
-    v <- x - 65
-    return(p1*v^5 + p2*v^4 + p3*v^3 + p4*v^2 + p5*v + p6)
-  }
-}
-```
-
-Lee el excel, hecho a mano 
-```{r}
-readdata <- function(sheet){
-  data <- read_excel("data/DataPaper.xlsx", sheet = sheet)
-  data <- sapply(data, as.double)
-  colnames(data)[1] <- "x"
-  data[is.na(data)] <- 0
-  lista <- list(Able = data.frame(data[2:8,]),
-                Mild = data.frame(data[10:16,]),
-                Moderate = data.frame(data[18:24,]),
-                Severe = data.frame(data[26:32,]),
-                Profound = data.frame(data[34:40,]))
-  return(lista)
-}
-```
-
+# Lectura de la base de datos
 ```{r, warning=FALSE, message=FALSE}
-MaleProb <- readdata("MaleProb")
-FemaleProb <- readdata("FemaleProb")
-MaleMu <- readdata("MaleMu")
-FemaleMu <- readdata("FemaleMu")
+source("cod/load_database.R")
 ```
 
-Intenta practicar con las probabilidades para poder interpolarlas
 ```{r}
-piv <- MaleProb[["Able"]]
-piv[8,] <- c(119, 0, 0, 0, 0, 0, 1)
-modelo <- data.frame(x = 20:119)
-modelo <- left_join(modelo, piv, by = "x")
-
-modelo[1:61, 2] <- as.double(spline(piv[1:7, 1], piv[1:7, 2], xout = 20:80)$y)
-modelo[61:99, 2] <- as.double(spline(piv[6:8, 1], piv[6:8, 2], xout = 80:118)$y)
-plot(modelo$Able)
-```
-Not convinced
-
-```{r}
-source("prob_estim.R")
+source("cod/prob_estim.R")
 prob_estim(1, 20, 0, 1)
 ```
-
 ```{r}
-red_factor <- function(x, t, sex){
-  if (sex == 1) {
-    c <- 0.163
-    h <- 0.403
-    k <- 0.303
+red_factor_mort(20,60,1)
+```
+```{r}
+red_factor_rest <- function(x, t, sex, series){
+  # Mejora las mortalidades con respecto al tiempo
+  k <- 0.3
+  if(series == 1){
+    c <- 0.625
+    h <- 0.106
+  } else if(series == 2){
+    c <- 0.6
+    h <- 0.197
   } else {
-    c <- 0.149
-    h <- 0.355
-    k <- 0.293
+    c <- 0.566
+    h <- 0.272
   }
   if(x > 65){
-    alpha <- 1 + (1-c)*(x-125)/65
-    f <- ((135-x)*h + (x-65)*k)/65
+    alpha <- 1 + (1-c)*(x-120)/65
+    f <- ((120-x)*h + (x-65)*k)/65
   } else {
     alpha <- c
     f <- h
@@ -93,16 +54,38 @@ red_factor <- function(x, t, sex){
 ```
 
 ```{r}
-add_mortality <- function(x, n){
-  return(0.15*max(n-2,0)/((1+1.1^{50-x})*5))
-}
+red_factor_rest(65, 53, 1, 1)
 ```
 
 ```{r}
+prob <- function(x, n){
+  return((table_males$`q_{x}`[x+1]) + add_mortality(x,n))
+}
+```
+# Empezar las tablas
 
+## Profound
+```{r}
+Profound <- data.frame(x = 0:119, Severe = 0.05, Profound = 0, Dead = 0)
+Profound$Dead[1:110] <- sapply(0:109, function(x) prob(x,4))
+Profound$Severe[110:120] <- seq(0.05,0,length.out = 11)
+Profound$Dead[120] <- 1
+interpol <- smooth.spline(c(Profound$x[100:110], 120), c(Profound$Dead[100:110], 1))
+Profound$Dead[110:119] <- predict(interpol, 110:119)$y
+Profound$Profound <- 1 - Profound$Severe - Profound$Dead
 ```
 
+## Severe
+```{r}
+Severe <- data.frame(x = 0:119, Moderate = 0.1, Severe = 0, Profound = 0, Dead = 0)
+Severe$Dead[1:110] <- sapply(0:109,function(x) (table_males$`q_{x}`[x+1]) + add_mortality(x,3))
+Severe$Dead[120] <- 1
+interpol <- smooth.spline(c(Severe$x[100:110], 120), c(Severe$Dead[100:110], 1))
+Severe$Dead[110:119] <- predict(interpol, 110:119)$y
 
+Severe$Moderate[110:120] <- seq(0.1,0,length.out = 11)
+# Profound$Profound <- 1 - Profound$Severe - Profound$Dead
+```
 
 
 
