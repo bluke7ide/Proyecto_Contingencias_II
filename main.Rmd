@@ -24,11 +24,11 @@ source("cod/load_database.R")
 # Lectura de funciones de extracción
 ```{r}
 source("cod/prob_estim.R")
+plot(red_factor_norm(90:120,1))
 ```
 
 # Empezar las tablas
 ```{r}
-coef_red <- seq(1,0,length.out = 11)
 source("cod/tablas.R")
 Males <- tablas(1)
 Females <- tablas(2)

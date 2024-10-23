@@ -96,6 +96,20 @@ red_factor_mort <- function(x, t, sex){
   return(alpha + (1-alpha)*(1-f)^(t/20))
 }
 
+red_factor_norm <- function(x, sex){
+  if (sex == 1) {
+    c <- 0.394
+    h <- 0.255
+    k <- 0.302
+  } else {
+    c <- 0.373
+    h <- 0.313
+    k <- 0.297
+  }
+    alpha <- 1 + (1-c)*(x-120)/90
+    f <- ((120-x)*h + (x-90)*k)/90
+  return((alpha + (1-alpha)*(1-f)^(max(0, x-90)/2))*(1/(1+exp(10*(x-105)/30))))
+}
 
 
 
