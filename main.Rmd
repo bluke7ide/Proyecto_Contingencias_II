@@ -44,7 +44,7 @@ fig <- ggplot(degradacion, aes(x = x)) +
     title = "Factor de reducción de deterioro para edades 90:120",
     x = "Edad",
     y = "Factor de reducción",
-    colour = ""
+    colour = " "
   ) +
   scale_color_manual(values = c("Hombres" = "navyblue",
                                 "Mujeres" = "violetred")) 
@@ -108,6 +108,22 @@ fig <- ggplot(Females$Able, aes(x = x)) +
 
 fig %>% ggplotly()
 ```
+# Diseño del producto
+Pago de primas: anual
+Esto se justifica con las probabilidades de transición de un año
+Temporalidad del seguro: vitalicio
+Es un seguro LTC, por lo que esperamos a que el asegurado tenga varios estados
+antes de morir. Si no fuera vitalicio, dejaríamos a medias a un asegurado.
+Temporalidad de pago de primas: hasta entrar en los estados severe/profound
+
+Inflación: 3%
+  Caso pesimista: 8%
+  Caso optimista: -1%
+  
+Tasa de interés: 5%
+  Caso pesimista: 3%
+  Caso optimista: 6.5%
+
 
 ```{r}
 
