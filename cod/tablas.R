@@ -49,6 +49,7 @@ Profound$Dead[110:119] <- predict(interpol(Profound), 110:119)$y
 degr <- Vectorize(red_factor_norm)
 coef_red <- c(degr(90:119, sex),0)
 
+
 Able$Profound <- sapply(0:119,function(x) deteriorate(x,sex, 0, 4))
 Able$Severe <- sapply(0:119,function(x) deteriorate(x,sex, 0, 3))
 Able$Moderate <- sapply(0:119,function(x) deteriorate(x,sex, 0, 2))

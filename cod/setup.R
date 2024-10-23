@@ -1,5 +1,8 @@
 pacman::p_load(
   tidyverse,
   ggplot2,
-  readxl
+  readxl,
+  writexl, 
+  ggplot2,
+  plotly
 )

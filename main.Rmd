@@ -24,7 +24,31 @@ source("cod/load_database.R")
 # Lectura de funciones de extracción
 ```{r}
 source("cod/prob_estim.R")
-plot(red_factor_norm(90:120,1))
+```
+
+# Factor de degradación para estados CAR
+La metodología original empezaba a dar problemas con probabilidades negativas a partir de una edad aproximada de 95 años, por lo que se decidió implementar un factor de reducción desde los 90 años para primero, complementar la probabilidad creciente de muerte y además poder arreglar el problema de probabilidades negativas.
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+degradacion <- data.frame(
+  x = 90:120, 
+  hombres = sapply(90:120, function(x) red_factor_norm(x, 1)),
+  mujeres = sapply(90:120, function(x) red_factor_norm(x, 2))
+  )
+
+
+fig <- ggplot(degradacion, aes(x = x)) +
+  geom_point(aes(y = hombres, color = "Hombres")) +
+  geom_point(aes(y = mujeres, color = "Mujeres")) +
+  theme_minimal() +
+  labs(
+    title = "Factor de reducción de deterioro para edades 90:120",
+    x = "Edad",
+    y = "Factor de reducción",
+    colour = ""
+  ) +
+  scale_color_manual(values = c("Hombres" = "navyblue",
+                                "Mujeres" = "violetred")) 
+fig %>% ggplotly()
 ```
 
 # Empezar las tablas
@@ -33,6 +57,71 @@ source("cod/tablas.R")
 Males <- tablas(1)
 Females <- tablas(2)
 ```
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+fig <- ggplot(Males$Able, aes(x = x)) +
+  geom_line(aes(y = Able, color = "Able")) +
+  geom_line(aes(y = Mild, color = "Mild")) +
+  geom_line(aes(y = Moderate, color = "Moderate")) +
+  geom_line(aes(y = Severe, color = "Severe")) +
+  geom_line(aes(y = Profound, color = "Profound")) +
+  geom_line(aes(y = Dead, color = "Dead")) +
+  theme_minimal() +
+  labs(
+    title = "Probabilidades de transición para hombres en estado Able",
+    x = "Edad",
+    y = "Valor"
+  ) +
+  scale_color_manual(values = c(
+    "Able" = "green",
+    "Mild" = "navyblue",
+    "Moderate" = "magenta",
+    "Severe" = "yellow",
+    "Profound" = "cyan",
+    "Dead" = "purple"
+  ))
+
+fig %>% ggplotly()
+```
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+fig <- ggplot(Females$Able, aes(x = x)) +
+  geom_line(aes(y = Able, color = "Able")) +
+  geom_line(aes(y = Mild, color = "Mild")) +
+  geom_line(aes(y = Moderate, color = "Moderate")) +
+  geom_line(aes(y = Severe, color = "Severe")) +
+  geom_line(aes(y = Profound, color = "Profound")) +
+  geom_line(aes(y = Dead, color = "Dead")) +
+  theme_minimal() +
+  labs(
+    title = "Probabilidades de transición para mujeres en estado Able",
+    x = "Edad",
+    y = "Valor"
+  ) +
+  scale_color_manual(values = c(
+    "Able" = "green",
+    "Mild" = "navyblue",
+    "Moderate" = "magenta",
+    "Severe" = "yellow",
+    "Profound" = "cyan",
+    "Dead" = "purple"
+  ))
+
+fig %>% ggplotly()
+```
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
 
 
 
