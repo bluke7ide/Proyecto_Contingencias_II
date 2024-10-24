@@ -126,7 +126,28 @@ Tasa de interés: 5%
 
 
 ```{r}
+calculo_acumulado <- function(x, tables){
+  # Por si acaso, termina en 000001 porque estamos multiplicando todas las transiciones
+  t1 <- tables$Able %>% select(-x)
+  t2 <- tables$Mild %>% select(-x) 
+  t3 <- tables$Moderate %>% select(-x)
+  t4 <- tables$Severe %>% select(-x)
+  t5 <- tables$Profound %>% select(-x)
+  estados <- as.numeric(t1[x+1,])
+  for(i in (x+2):120){
+    matriz_t <- rbind(t1[i,], t2[i,], t3[i,], t4[i,], t5[i,], c(0,0,0,0,0,1)) 
+    matriz_t <- as.matrix(matriz_t)
+    estados <- estados %*% matriz_t
+  }
+  return(estados)
+}
+```
 
+
+```{r}
+t <- proc.time()
+a <- calculo_acumulado(21, Males)
+proc.time() - t 
 ```
 
 
