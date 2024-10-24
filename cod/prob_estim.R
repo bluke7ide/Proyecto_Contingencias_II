@@ -53,7 +53,7 @@ prob <- function(x, n, sex){
   return((Aus_tables[[sex]]$`q_{x}`[x+1]) + add_mort(x,n))
 }
 
-red_factor_rest <- function(x, t, sex, series){
+red_factor_rest <- function(x, t, series){
   # Mejora las transiciones con respecto al tiempo
   k <- 0.3
   if(series == 1){
@@ -67,8 +67,8 @@ red_factor_rest <- function(x, t, sex, series){
     h <- 0.272
   }
   if(x > 65){
-    alpha <- 1 + (1-c)*(x-120)/65
-    f <- ((120-x)*h + (x-65)*k)/65
+    alpha <- 1 + (1-c)*(x-119)/54
+    f <- ((119-x)*h + (x-65)*k)/54
   } else {
     alpha <- c
     f <- h
@@ -87,8 +87,8 @@ red_factor_mort <- function(x, t, sex){
     k <- 0.293
   }
   if(x > 65){
-    alpha <- 1 + (1-c)*(x-125)/65
-    f <- ((125-x)*h + (x-65)*k)/65
+    alpha <- 1 + (1-c)*(x-119)/54
+    f <- ((119-x)*h + (x-65)*k)/54
   } else {
     alpha <- c
     f <- h

@@ -11,18 +11,10 @@ output:
     self_contained: true
     highlight: tango
 ---
-# Librerías
-```{r}
-source("cod/setup.R")
-```
-
-# Lectura de la base de datos
+# Librerías e importaciones
 ```{r, warning=FALSE, message=FALSE}
+source("cod/setup.R")
 source("cod/load_database.R")
-```
-
-# Lectura de funciones de extracción
-```{r}
 source("cod/prob_estim.R")
 ```
 
@@ -108,6 +100,67 @@ fig <- ggplot(Females$Able, aes(x = x)) +
 
 fig %>% ggplotly()
 ```
+
+# Mejora de mortalidades en el tiempo y mejora de transiciones de empeoramiento
+
+```{r}
+degradar_mort <- function(x, sex){
+  if(sex == 1){
+    data <- Males
+  } else {
+    data <- Females
+  }
+  Able <- data$Able[(x+1):120,]
+  Mild <- data$Mild[(x+1):120,]
+  Moderate <- data$Moderate[(x+1):120,]
+  Severe <- data$Severe[(x+1):120,]
+  Profound <- data$Profound[(x+1):120,]
+  
+  # Constantes a multiplicar
+  degr <- sapply(x:119, function(y) red_factor_rest(y, 28 + y - x, 2))
+  mort <- sapply(x:119, function(y) red_factor_mort(y, 28 + y - x, 2))
+  
+  # Mejora las transiciones que empeoran
+  Able$Mild <- Able$Mild * degr
+  Able$Moderate <- Able$Moderate * degr
+  Able$Severe <- Able$Severe * degr
+  Able$Profound <- Able$Profound * degr
+  Mild$Moderate <- Mild$Moderate * degr
+  Mild$Severe <- Mild$Severe * degr
+  Mild$Profound <- Mild$Profound * degr
+  Moderate$Severe <- Moderate$Severe * degr
+  Moderate$Profound <- Moderate$Profound * degr
+  Severe$Profound <- Severe$Profound * degr
+  
+  # Mejora las probabilidades de muerte
+  Able$Dead <- Able$Dead * mort
+  Mild$Dead <- Mild$Dead * mort
+  Moderate$Dead <- Moderate$Dead * mort
+  Severe$Dead <- Severe$Dead * mort
+  Profound$Dead <- Profound$Dead * mort
+  
+  # Recalcula las probabilidades de permanecer en el estado
+  Able <- Able %>% mutate(Able = 1 -rowSums(select(., -x, -Able)))
+  Mild <- Mild %>% mutate(Mild = 1 -rowSums(select(., -x, -Mild)))
+  Moderate <- Moderate %>% mutate(Moderate = 1 -rowSums(select(., -x, -Moderate)))
+  Severe <- Severe %>% mutate(Severe = 1 -rowSums(select(., -x, -Severe)))
+  Profound <- Profound %>% mutate(Profound = 1 -rowSums(select(., -x, -Profound)))
+  
+  # Devuelve la lista para la edad x
+  Tables <- list(Able = Able,
+                 Mild = Mild,
+                 Moderate = Moderate,
+                 Severe = Severe,
+                 Profound = Profound)
+  return(Tables)
+}
+```
+
+```{r}
+a <- degradar_mort(20, 1)
+```
+
+
 # Diseño del producto
 Pago de primas: anual
 Esto se justifica con las probabilidades de transición de un año
@@ -134,21 +187,41 @@ calculo_acumulado <- function(x, tables){
   t4 <- tables$Severe %>% select(-x)
   t5 <- tables$Profound %>% select(-x)
   estados <- as.numeric(t1[x+1,])
+  suma <- estados
   for(i in (x+2):120){
     matriz_t <- rbind(t1[i,], t2[i,], t3[i,], t4[i,], t5[i,], c(0,0,0,0,0,1)) 
     matriz_t <- as.matrix(matriz_t)
     estados <- estados %*% matriz_t
+    suma <- suma + estados
   }
-  return(estados)
+  return(suma)
 }
 ```
 
-
 ```{r}
 t <- proc.time()
-a <- calculo_acumulado(21, Males)
+b <- calculo_acumulado(21, Males)
 proc.time() - t 
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
