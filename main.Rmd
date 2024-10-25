@@ -109,7 +109,7 @@ source("cod/degradar_mort.R")
 ```
 
 ```{r}
-a <- degradar_mort(20, 1)
+edad20 <- degradar_mort(20, 1)
 ```
 
 
@@ -132,7 +132,7 @@ Tasa de interés: 5%
 
 ```{r}
 calculo_acumulado <- function(x, tables){
-  # Por si acaso, termina en 000001 porque estamos multiplicando todas las transiciones
+  # Por si acaso, estados termina en 000001 porque multiplicamos todas las transiciones
   t1 <- tables$Able %>% select(-x) 
   t2 <- tables$Mild %>% select(-x) 
   t3 <- tables$Moderate %>% select(-x)
@@ -151,14 +151,27 @@ calculo_acumulado <- function(x, tables){
 ```
 
 ```{r}
-calculo_acumulado(21, a)
+calculo_acumulado(20, edad20)
 ```
 
 ```{r}
-d <- lapply(Males, function(x) as.data.frame(x[21:120,]))
-calculo_acumulado(21, d)
+edad20sin_m <- lapply(Males, function(x) as.data.frame(x[21:120,]))
+calculo_acumulado(20, edad20sin_m)
 ```
 Hay una clara diferencia entre mejorías de mortalidades
+
+```{r}
+rm(
+  add_mort,
+  deteriorate,
+  prob,
+  readdata,
+  red_factor_norm,
+  tablas,
+  fig,
+  edad20sin_m
+)
+```
 
 # Cálculo de valores presentes
 ```{r}
@@ -183,18 +196,74 @@ calculo_vp <- function(x, tables, interes, inflacion){
     estados <- temp
     suma <- suma + estados*v^(i-1)
   }
-  return(list(suma, seguro))
+  suma[6] <- seguro
+  return(suma)
 }
 ```
 
 ```{r}
-prueba <- calculo_vp(20, a, 0.07, 0.03)
+prueba <- calculo_vp(20, edad20, 0.07, 0.03)
 
 # Seguro de vida normal, 100 millones
-(prueba[[2]]*100e6)/(12*prueba[[1]][1])
+(prueba[6]*100e6 )/(12*prueba[1])
+
+# Seguro de vida con anualidades en caso de Severe o Profound, pagando Mild y Moderate
+(prueba[6]*100e6 + 12*(1.5e6*prueba[4] + 3e6*prueba[5])  )/(12*(prueba[1]+prueba[2]+prueba[3]))
+
+# Seguro de vida con anualidades pagando 0.25e6 en aumento de estado
+(prueba[6]*100e6 + 12*(0.25e6*prueba[2] +
+                         0.5e6*prueba[3] +
+                         0.75e6*prueba[4] +
+                         1e6*prueba[5]))/(12*prueba[1])
+
+# Seguro de vida con anualidades pagando 0.5e6 en aumento de estado
+(prueba[6]*100e6 + 12*(0.5e6*prueba[2] +
+                         1e6*prueba[3] +
+                         1.5e6*prueba[4] +
+                         2e6*prueba[5]))/(12*prueba[1])
+
+```
+
+# Modelo estocástico
+## Generación del portafolio
+```{r}
+set.seed(70707)
+portfolio <- data.frame(edad = round(runif(5000, 19.5, 70.5)),
+                         sexo = round(runif(5000, 1, 2))) %>% 
+  arrange(., edad, sexo) %>%
+  mutate(id = dense_rank(paste(edad, sexo)))
+descripcion <- portfolio %>% count(edad, sexo)
+
+
+```
+
+```{r}
+lista <- list()
+for( i in 1:length(descripcion$edad)){
+  lista[[i]] <- degradar_mort(descripcion$edad[i], descripcion$sexo[i])
+}
+```
+
+```{r}
+proyeccion <- function(){
+
+  estados <- rep(1, 5000)
+  suma <- rep(0, 5000)
+  pagos <- rep(0, 5000)
+  edades <- portfolio$edad
+  for(i in 1:100){
+    random <- runif(5000, 0, 1)
+    locales <- 1
+  }
+}
 ```
 
 
+```{r}
+t <- proc.time()
+  data <- lapply(1:5000, function(x) as.numeric(lista[[portfolio$id[x]]][[estados[x]]][1, 2:7]))
+proc.time()-t
+```
 
 
 

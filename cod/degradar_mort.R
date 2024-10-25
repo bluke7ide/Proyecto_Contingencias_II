@@ -41,10 +41,10 @@ degradar_mort <- function(x, sex){
   Profound <- Profound %>% mutate(Profound = 1 -rowSums(select(., -x, -Profound)))
   
   # Devuelve la lista para la edad x
-  Tables <- list(Able = Able,
-                 Mild = Mild,
-                 Moderate = Moderate,
-                 Severe = Severe,
-                 Profound = Profound)
+  Tables <- list(Able = as.data.frame(Able),
+                 Mild = as.data.frame(Mild),
+                 Moderate = as.data.frame(Moderate),
+                 Severe = as.data.frame(Severe),
+                 Profound = as.data.frame(Profound))
   return(Tables)
 }
