@@ -112,7 +112,6 @@ source("cod/degradar_mort.R")
 edad20 <- degradar_mort(20, 1)
 ```
 
-
 # Diseño del producto
 Pago de primas: anual
 Esto se justifica con las probabilidades de transición de un año
@@ -164,6 +163,7 @@ Hay una clara diferencia entre mejorías de mortalidades
 rm(
   add_mort,
   deteriorate,
+  degradacion,
   prob,
   readdata,
   red_factor_norm,
@@ -223,6 +223,14 @@ prueba <- calculo_vp(20, edad20, 0.07, 0.03)
                          2e6*prueba[5]))/(12*prueba[1])
 
 ```
+```{r}
+rm(
+  edad20, 
+  prueba,
+  calculo_acumulado,
+  calculo_vp
+)
+```
 
 # Modelo estocástico
 ## Generación del portafolio
@@ -245,25 +253,131 @@ for( i in 1:length(descripcion$edad)){
 ```
 
 ```{r}
-proyeccion <- function(){
+rm(
+  degradar_mort,
+  red_factor_mort,
+  red_factor_rest
+)
+```
 
-  estados <- rep(1, 5000)
-  suma <- rep(0, 5000)
-  pagos <- rep(0, 5000)
-  edades <- portfolio$edad
-  for(i in 1:100){
-    random <- runif(5000, 0, 1)
-    locales <- 1
+## Proyección grupal
+```{r}
+proyeccion <- function(interes, inflacion){
+  # Inicialización de los valores
+  estados <- rep(1, 102)
+  edades <- descripcion$edad
+  rango <- 120 - min(edades)
+  unifs <- matrix(runif(rango * 102), nrow = rango, ncol = 102)
+  v <- (1 + inflacion) / (1 + interes)
+  vp <- matrix(0, nrow = 102, ncol = 6)
+
+  # Iteración entre edades 
+  for (i in 1:rango) {
+    # Obtiene las probabilidades locales 
+    locales <- sapply(1:102, function(x) {
+      edad_actual <- edades[x]
+      max_iter <- 120 - edad_actual
+      if (i <= max_iter && estados[x] < 6) {
+        lista[[x]][[estados[x]]][i, 2:7]
+      } else {
+        rep(NA, 6)
+      }
+    })
+    # Pone los valores presentes para los estados vivos
+    valid_states <- estados < 6
+    vp[cbind(1:102, estados)] <- vp[cbind(1:102, estados)] + ifelse(valid_states, v^(i - 1), 0)
+    
+    # Localiza las probabilidades uniformes en la iteración
+    unif_col <- unifs[i, ]
+    
+    # Calcula los nuevos estados
+    nuevos_estados <- sapply(1:102, function(j) {
+      estado <- estados[j]
+      if (estado == 6){
+        return(estado)
+      }  
+      # El estado uno no tiene reversa
+      probs <- if (estado == 1){
+        cumsum(locales[, j])
+      } else {
+        cumsum(locales[(estado - 1):6, j])
+      }
+      # Observa cual es el nuevo estado por medio de comparación al cumsum
+      nuevo_estado <- which(probs > unif_col[j])[1]
+      if (is.na(nuevo_estado)){
+        return(estado)
+      } else if (estado == 1) {
+        return(nuevo_estado)
+      } else {
+        # Ajuste porque el cumsum empieza solo con las probabilidades necesarias
+        return(nuevo_estado + estado - 2)
+      } 
+    })
+    # Pone los valores presentes para los estados muertos
+    estados <- ifelse(estados == 6 & vp[cbind(1:102, 6)] == 0, estados, nuevos_estados)
+    vp[estados == 6, 6] <- ifelse(vp[estados == 6, 6] == 0, v^i, vp[estados == 6, 6])
   }
+  return(vp)
 }
 ```
 
+```{r}
+t <- proc.time()
+una <- proyeccion(0.07, 0.03)
+proc.time()-t
+```
+
+## Cálculo individual
+```{r}
+proy_ind <- function(id, interes, inflacion){
+  data <- lista[[id]]
+  edad <- descripcion$edad[id]
+  rango <- 120 - edad
+  unif <- runif(rango)
+  estado <- 1
+  v <- (1+inflacion)/(1+interes)
+  vp <- data$Able[rango,2:7]
+  for(i in 1:rango){
+    locales <- data[estado][[1]][i,]
+    vp[estado] <- vp[estado] + v^(i-1)
+    if(estado == 1){
+      states <- 2:7
+    } else {
+      states <- estado:7
+    }
+    for(k in states){
+      prob <- locales[k]
+      if(prob>unif[i]){
+        estado <- k-1
+        break
+      } else {
+        unif[i] <- unif[i] - prob
+      }
+    }
+    if(estado == 6){
+      vp[estado] <- v^i
+      break
+    }
+  }
+  return(vp)
+}
+```
 
 ```{r}
 t <- proc.time()
-  data <- lapply(1:5000, function(x) as.numeric(lista[[portfolio$id[x]]][[estados[x]]][1, 2:7]))
-proc.time()-t
+a <- proy_ind(1000, 0.07, 0.03)
+proc.time() - t
 ```
+
+```{r}
+t <- proc.time()
+proyecciones <- list()
+for( i in 1:5){
+  proyecciones[[i]] <- proyeccion(0.07,0.03)
+}
+proc.time() - t
+```
+
 
 
 
