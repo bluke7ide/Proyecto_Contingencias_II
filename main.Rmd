@@ -261,31 +261,33 @@ rm(
 ```
 
 ## Proyección grupal
+
 ```{r}
-proyeccion <- function(interes, inflacion){
+proyeccion <- function(interes, inflacion) {
   # Inicialización de los valores
-  estados <- rep(1, 102)
+  estados <- rep(1L, 102)
   edades <- descripcion$edad
   rango <- 120 - min(edades)
   unifs <- matrix(runif(rango * 102), nrow = rango, ncol = 102)
   v <- (1 + inflacion) / (1 + interes)
   vp <- matrix(0, nrow = 102, ncol = 6)
-
+  v_power <- v^(0:rango)
+  max_iters <- 120 - edades 
+  
+  
   # Iteración entre edades 
   for (i in 1:rango) {
     # Obtiene las probabilidades locales 
     locales <- sapply(1:102, function(x) {
-      edad_actual <- edades[x]
-      max_iter <- 120 - edad_actual
-      if (i <= max_iter && estados[x] < 6) {
+      if (i <= max_iters[x] && estados[x] < 6) {
         lista[[x]][[estados[x]]][i, 2:7]
       } else {
         rep(NA, 6)
       }
     })
-    # Pone los valores presentes para los estados vivos
-    valid_states <- estados < 6
-    vp[cbind(1:102, estados)] <- vp[cbind(1:102, estados)] + ifelse(valid_states, v^(i - 1), 0)
+
+    # Actualización de valores presentes para estados vivos
+    vp[cbind(1:102, estados)] <- vp[cbind(1:102, estados)] + (v_power[i] * (estados < 6))
     
     # Localiza las probabilidades uniformes en la iteración
     unif_col <- unifs[i, ]
@@ -293,18 +295,18 @@ proyeccion <- function(interes, inflacion){
     # Calcula los nuevos estados
     nuevos_estados <- sapply(1:102, function(j) {
       estado <- estados[j]
-      if (estado == 6){
+      if (estado == 6) {
         return(estado)
       }  
       # El estado uno no tiene reversa
-      probs <- if (estado == 1){
+      probs <- if (estado == 1) {
         cumsum(locales[, j])
       } else {
         cumsum(locales[(estado - 1):6, j])
       }
       # Observa cual es el nuevo estado por medio de comparación al cumsum
       nuevo_estado <- which(probs > unif_col[j])[1]
-      if (is.na(nuevo_estado)){
+      if (is.na(nuevo_estado)) {
         return(estado)
       } else if (estado == 1) {
         return(nuevo_estado)
@@ -313,17 +315,40 @@ proyeccion <- function(interes, inflacion){
         return(nuevo_estado + estado - 2)
       } 
     })
-    # Pone los valores presentes para los estados muertos
+
+    # Actualización de estados y valores presentes de estados muertos
     estados <- ifelse(estados == 6 & vp[cbind(1:102, 6)] == 0, estados, nuevos_estados)
-    vp[estados == 6, 6] <- ifelse(vp[estados == 6, 6] == 0, v^i, vp[estados == 6, 6])
+    vp[estados == 6 & vp[cbind(1:102, 6)] == 0, 6] <- v_power[i + 1]
   }
   return(vp)
 }
 ```
 
 ```{r}
+ejecutar_proyecciones_par <- function(n, interes, inflacion) {
+  cl <- makeCluster(detectCores()/2) 
+
+  # Exportar las variables necesarias al clúster
+  clusterExport(
+    cl,
+    varlist = c("descripcion", "lista", "proyeccion", "interes", "inflacion"),
+    envir = environment())
+
+  # Ejecutar la proyección en paralelo
+  resultados <- parSapply(cl, 1:n, function(x) {
+    proyeccion(interes, inflacion)
+  })
+
+  # Lectura de los resultados
+  stopCluster(cl)
+  return(array(unlist(resultados), dim = c(102, 6, n)))
+}
+
+```
+
+```{r}
 t <- proc.time()
-una <- proyeccion(0.07, 0.03)
+proyecciones_totales_parallel <- ejecutar_proyecciones_par(10, 0.07, 0.03)
 proc.time()-t
 ```
 
@@ -372,7 +397,7 @@ proc.time() - t
 ```{r}
 t <- proc.time()
 proyecciones <- list()
-for( i in 1:5){
+for( i in 1:10){
   proyecciones[[i]] <- proyeccion(0.07,0.03)
 }
 proc.time() - t
