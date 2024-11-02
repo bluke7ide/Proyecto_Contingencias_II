@@ -4,5 +4,6 @@ pacman::p_load(
   readxl,
   writexl, 
   ggplot2,
-  plotly
+  plotly,
+  parallel
 )
