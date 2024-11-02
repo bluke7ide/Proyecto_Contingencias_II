@@ -371,34 +371,34 @@ WARNING: En progreso.
 ```{r}
 proy_vp <- function(interes, inflacion) {
   # Inicialización de los valores
-  estados <- rep(1L, 102)
-  edades <- descripcion$edad
+  estados <- rep(1, 5000)
+  edades <- portfolio$edad
   rango <- 120 - min(edades)
-  unifs <- matrix(runif(rango * 102), nrow = rango, ncol = 102)
+  unifs <- matrix(runif(rango * 5000), nrow = rango, ncol = 5000)
   v <- (1 + inflacion) / (1 + interes)
-  vp <- matrix(0, nrow = 102, ncol = 6)
+  vp <- matrix(0, nrow = 5000, ncol = 6)
   v_power <- v^(0:rango)
   max_iters <- 120 - edades
   
   # Iteración entre edades 
   for (i in 1:rango) {
     # Accede directamente a las probabilidades acumuladas en `lista`
-    locales <- sapply(1:102, function(x) {
+    locales <- sapply(1:5000, function(x) {
       if (i <= max_iters[x] && estados[x] < 6) {
-        lista[[x]][[estados[x]]][i, ]  # Ya es acumulada
+        lista[[portfolio$id[x]]][[estados[x]]][i, ]
       } else {
         rep(NA, 6)
       }
     })
 
     # Actualización de valores presentes para estados vivos
-    vp[cbind(1:102, estados)] <- vp[cbind(1:102, estados)] + (v_power[i] * (estados < 6))
+    vp[cbind(1:5000, estados)] <- vp[cbind(1:5000, estados)] + (v_power[i] * (estados < 6))
     
     # Localiza las probabilidades uniformes en la iteración
     unif_col <- unifs[i, ]
     
     # Calcula los nuevos estados
-    nuevos_estados <- sapply(1:102, function(j) {
+    nuevos_estados <- sapply(1:5000, function(j) {
       estado <- estados[j]
       if (estado == 6) {
         return(estado)
@@ -420,12 +420,19 @@ proy_vp <- function(interes, inflacion) {
     })
 
     # Actualización de estados y valores presentes de estados muertos
-    estados <- ifelse(estados == 6 & vp[cbind(1:102, 6)] == 0, estados, nuevos_estados)
-    vp[estados == 6 & vp[cbind(1:102, 6)] == 0, 6] <- v_power[i + 1]
+    estados <- ifelse(estados == 6 & vp[cbind(1:5000, 6)] == 0, estados, nuevos_estados)
+    vp[estados == 6 & vp[cbind(1:5000, 6)] == 0, 6] <- v_power[i + 1]
   }
-  
+  vector <- lista[[1]]$Able[100,]
+  vector[1:6] <- sapply(as.data.frame(vp), sum)
   return(vp)
 }
+```
+
+```{r}
+t <- proc.time()
+proy_vp_data <- proy_vp(0.07, 0.03)
+proc.time()-t
 ```
 
 ## Proyección grupal de sobrevivencia
