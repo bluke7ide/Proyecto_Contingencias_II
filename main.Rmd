@@ -297,7 +297,7 @@ sexos <- portfolio$sexo == 1
 ```
 
 ## Proyeccion grupal de pagos por estados
-Este es el punto 2
+Este es el punto 2. En construcción. (no se sabe con certeza)
 
 ```{r}
 set.seed(1)
@@ -310,26 +310,24 @@ proc.time()-t
 ```
 
 ## Proyección grupal de sobrevivencia
-Este es el punto 3
+Este es el punto 3. Definitivo (los resultados están bien)
 
 ```{r}
 t <- proc.time()
 proy_vivos_data <- list()
-for(i in 1:100){
+for(i in 1:10){
   proy_vivos_data[[i]] <- proy_vivos()
 }
-
 proc.time()-t
 ```
 
 ```{r}
 t <- proc.time()
-proy_vivos_data <- proy_vivos_par(100)
+proy_vivos_data <- proy_vivos_par(10)
 proc.time()-t
 ```
 
-
-
+## Percentiles
 ```{r}
 n_filas <- nrow(proy_vivos_data[[1]])
 n_columnas <- ncol(proy_vivos_data[[1]])

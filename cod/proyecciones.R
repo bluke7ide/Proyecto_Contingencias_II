@@ -46,36 +46,36 @@ proy_vp <- function() {
 }
 
 proy_vivos <- function() {
+  # Inicializa las matrices
   estados <- rep(1, 5000)
   unifs <- matrix(runif(rango * 5000), nrow = rango, ncol = 5000)
   vivos_h <- matrix(0, nrow = 101, ncol = 6)
   vivos_m <- matrix(0, nrow = 101, ncol = 6)
-  
   vivos_h[1, 1] <- hombres
   vivos_m[1, 1] <- mujeres
-  
   for (i in 1:rango) {
+    # Observa cuales no están muertos
     ids_activos <- which(estados != 6)
-    
     # Si no hay más activos, finaliza el bucle
     if (length(ids_activos) == 0) {
       vivos_h[(i + 1):101, 6] <- hombres
       vivos_m[(i + 1):101, 6] <- mujeres
       break
     }
-    
     nuevos_estados <- estados
+    # Localiza los unifs locales
     unif_col <- unifs[i, ]
-    
     for (j in seq_along(ids_activos)) {
+      # Localiza el id y el estado de esta persona
       idx <- ids_activos[j]
       estado <- estados[idx]
-      
+      # Mientras no haya alcanzado su edad terminal
       if (i <= max_iters[idx]) {
+        # Agarra la lista de probabilidades de su estado, las que no son cero
         probs <- lista[[portfolio$id[idx]]][[estado]][i, (estado - 1):6]
-        
+        # Calcula cuál probabilidad está de primero con cumsum ya hecho
         nuevo_estado <- which(probs > unif_col[idx])[1]
-        
+        # Y pone el nuevo estado dependiendo de la posición del which
         nuevos_estados[idx] <- if (estado == 1) {
           nuevo_estado
         } else {
@@ -83,22 +83,19 @@ proy_vivos <- function() {
         }
       }
     }
-    
     # Actualización de estados y conteo en vivos_h y vivos_m
     estados[ids_activos] <- nuevos_estados[ids_activos]
     vivos_h[i + 1, ] <- tabulate(estados[sexos], nbins = 6)
     vivos_m[i + 1, ] <- tabulate(estados[!sexos], nbins = 6)
   }
-  
-  # Convertir vivos_h y vivos_m a data.frames
+  # Convertir vivos_h y vivos_m a dataframes
   vivos_h <- as.data.frame(vivos_h)
   colnames(vivos_h) <- c("Able", "Mild", "Moderate", "Severe", "Profound", "Dead")
-  
   vivos_m <- as.data.frame(vivos_m)
   colnames(vivos_m) <- c("Able", "Mild", "Moderate", "Severe", "Profound", "Dead")
-  
   return(list(vivos_m, vivos_h))
 }
+
 proy_vivos_par <- function(n) {
   # Crear un clúster usando la mitad de los núcleos disponibles
   cl <- makeCluster(detectCores() / 2) 
