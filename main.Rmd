@@ -291,10 +291,6 @@ rango <- 120 - min(edades)
 v <- (1 + inflacion) / (1 + interes)
 v_power <- v^(0:rango)
 max_iters <- 120 - edades
-```
-
-
-```{r}
 mujeres <- sum(portfolio$sexo == 2)
 hombres <- sum(portfolio$sexo == 1)
 sexos <- portfolio$sexo == 1
@@ -306,7 +302,10 @@ Este es el punto 2
 ```{r}
 set.seed(1)
 t <- proc.time()
-proy_vp_data <- proy_vp()
+proy_vp_data <- list()
+for(i in 1:10){
+  proy_vp_data[[i]] <- proy_vp()
+}
 proc.time()-t
 ```
 
@@ -315,8 +314,48 @@ Este es el punto 3
 
 ```{r}
 t <- proc.time()
-proy_vivos_data <- proy_vivos()
+proy_vivos_data <- list()
+for(i in 1:100){
+  proy_vivos_data[[i]] <- proy_vivos()
+}
+
 proc.time()-t
+```
+
+```{r}
+t <- proc.time()
+proy_vivos_data <- proy_vivos_par(100)
+proc.time()-t
+```
+
+
+
+```{r}
+n_filas <- nrow(proy_vivos_data[[1]])
+n_columnas <- ncol(proy_vivos_data[[1]])
+
+# Creamos una matriz para almacenar el percentil 50
+perc_50_h <- matrix(0, nrow = n_filas, ncol = n_columnas)
+perc_50_m <- matrix(0, nrow = n_filas, ncol = n_columnas)
+
+# Calculamos el percentil 50 para cada casilla
+for (fila in 1:n_filas) {
+  for (col in 1:n_columnas) {
+    # Extraemos los valores de la misma posición en cada matriz
+    val_h <- sapply(proy_vivos_data[1,], function(mat) mat[fila, col])
+    val_m <- sapply(proy_vivos_data[2,], function(mat) mat[fila, col])
+    # Calculamos el percentil 50 (mediana) y lo asignamos a la matriz resultante
+    perc_50_h[fila, col] <- median(val_h)
+    perc_50_m[fila, col] <- median(val_m)
+  }
+}
+
+# Convertimos a data.frame y asignamos nombres de columna
+perc_50_h <- as.data.frame(perc_50_h)
+colnames(perc_50_h) <- colnames(proy_vp_data[[1]])
+perc_50_m <- as.data.frame(perc_50_m)
+colnames(perc_50_m) <- colnames(proy_vp_data[[1]])
+
 ```
 
 

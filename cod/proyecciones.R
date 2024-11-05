@@ -1,59 +1,42 @@
 proy_vp <- function() {
-  # Inicialización de los valores
+  # Inicializa las matrices 
   estados <- rep(1, 5000)
   unifs <- matrix(runif(rango * 5000), nrow = rango, ncol = 5000)
   vp <- matrix(0, nrow = 5000, ncol = 6)
-  
-  # Iteración entre edades 
   for (i in 1:rango) {
-    # Variable indicadora para omitir personas en estado 6
-    ind_activo <- (estados != 6)
-    
-    # Inicializar locales como una matriz de NA con dimensiones apropiadas
-    locales <- matrix(NA, nrow = 6, ncol = sum(ind_activo))
-    
-    # Llenar sólo las columnas necesarias
-    ids_activos <- which(ind_activo)
-    for (j in seq_along(ids_activos)) {
-      x <- ids_activos[j]
-      if (i <= max_iters[x] && estados[x] < 6) {
-        locales[, j] <- lista[[portfolio$id[x]]][[estados[x]]][i, ]
-      }
-    }
-    
-    if(all(is.na(locales))) {
+    # Verifica quienes no están muertos
+    ids_activos <- which(estados != 6)
+    # Si no hay más activos, finaliza el bucle
+    if (length(ids_activos) == 0) {
       break
     }
-    
-    # Actualización de valores presentes para estados vivos
-    vp[cbind(1:5000, estados)] <- vp[cbind(1:5000, estados)] + (v_power[i] * (estados < 6))
-    
-    # Localiza las probabilidades uniformes en la iteración
+    # Realiza una copia de los nuevos estados por seguridad
+    nuevos_estados <- estados
+    # Obtiene las probabilidades en esa iteración
     unif_col <- unifs[i, ]
-    
-    # Calcula los nuevos estados sólo para quienes no están en estado 6
-    nuevos_estados <- numeric(length(ids_activos))
+    # Para cada persona activa
     for (j in seq_along(ids_activos)) {
+      # Obtiene su id y estado
       idx <- ids_activos[j]
       estado <- estados[idx]
-      probs <- locales[(estado - 1):6, j]
-      
-      nuevo_estado <- which(probs > unif_col[idx])[1]
-      
-      # Si el estado es 1, entonces el which dará las posiciones correctas
-      if (!is.na(nuevo_estado)) {
-        if (estado == 1) {
-          nuevos_estados[j] <- nuevo_estado
+      # Mientras esa persona no haya alcanzado su edad terminal
+      if (i <= max_iters[idx]) {
+        # Agarra la lista de probabilidades de su estado, las que no son cero
+        probs <- lista[[portfolio$id[idx]]][[estado]][i, (estado - 1):6]
+        # Calcula cuál probabilidad está de primero con cumsum ya hecho
+        nuevo_estado <- which(probs > unif_col[idx])[1]
+        # Y pone el nuevo estado dependiendo de la posición del which
+        nuevos_estados[idx] <- if (estado == 1) {
+          nuevo_estado
         } else {
-          nuevos_estados[j] <- nuevo_estado + estado - 2
+          nuevo_estado + estado - 2
         }
-      } else {
-        nuevos_estados[j] <- estado
       }
     }
-    
-    # Actualización de estados, incluyendo a los que ya están en estado 6
-    estados[ids_activos] <- nuevos_estados
+    estados[ids_activos] <- nuevos_estados[ids_activos]
+    # Pone el valor presente si está activo
+    vp[cbind(1:5000, estados)] <- vp[cbind(1:5000, estados)] + (v_power[i] * (estados < 6))
+    # Si se acaba de morir, porque su vp de muerto es 0, entonces que le acredite a final de año
     vp[estados == 6 & vp[cbind(1:5000, 6)] == 0, 6] <- v_power[i + 1]
   }
   
@@ -67,62 +50,82 @@ proy_vivos <- function() {
   unifs <- matrix(runif(rango * 5000), nrow = rango, ncol = 5000)
   vivos_h <- matrix(0, nrow = 101, ncol = 6)
   vivos_m <- matrix(0, nrow = 101, ncol = 6)
+  
   vivos_h[1, 1] <- hombres
   vivos_m[1, 1] <- mujeres
   
   for (i in 1:rango) {
-    ind_activo <- (estados != 6)
+    ids_activos <- which(estados != 6)
     
-    # Inicializa `locales` como matriz de `NA` y llena las columnas para los estados activos
-    locales <- matrix(NA, nrow = 6, ncol = sum(ind_activo))
-    ids_activos <- which(ind_activo)
-    
-    for (j in seq_along(ids_activos)) {
-      x <- ids_activos[j]
-      if (i <= max_iters[x] && estados[x] < 6) {
-        locales[, j] <- lista[[portfolio$id[x]]][[estados[x]]][i, ]
-      }
-    }
-    
-    if(all(is.na(locales))) {
+    # Si no hay más activos, finaliza el bucle
+    if (length(ids_activos) == 0) {
       vivos_h[(i + 1):101, 6] <- hombres
       vivos_m[(i + 1):101, 6] <- mujeres
       break
     }
     
+    nuevos_estados <- estados
     unif_col <- unifs[i, ]
     
-    # Calcula `nuevos_estados` sin `sapply` usando los índices activos
-    nuevos_estados <- numeric(length(ids_activos))
     for (j in seq_along(ids_activos)) {
       idx <- ids_activos[j]
       estado <- estados[idx]
-      probs <- locales[(estado - 1):6, j]
       
-      nuevo_estado <- which(probs > unif_col[idx])[1]
-      
-      # Ajusta el estado con base en el valor actual de `estado`
-      if (!is.na(nuevo_estado)) {
-        if (estado == 1) {
-          nuevos_estados[j] <- nuevo_estado
+      if (i <= max_iters[idx]) {
+        probs <- lista[[portfolio$id[idx]]][[estado]][i, (estado - 1):6]
+        
+        nuevo_estado <- which(probs > unif_col[idx])[1]
+        
+        nuevos_estados[idx] <- if (estado == 1) {
+          nuevo_estado
         } else {
-          nuevos_estados[j] <- nuevo_estado + estado - 2
+          nuevo_estado + estado - 2
         }
-      } else {
-        nuevos_estados[j] <- estado
       }
     }
     
-    # Actualiza `estados` y calcula los vivos
-    estados[ids_activos] <- nuevos_estados
+    # Actualización de estados y conteo en vivos_h y vivos_m
+    estados[ids_activos] <- nuevos_estados[ids_activos]
     vivos_h[i + 1, ] <- tabulate(estados[sexos], nbins = 6)
     vivos_m[i + 1, ] <- tabulate(estados[!sexos], nbins = 6)
   }
   
-  # Convierte `vivos` en un `data.frame` con nombres de columna
+  # Convertir vivos_h y vivos_m a data.frames
   vivos_h <- as.data.frame(vivos_h)
   colnames(vivos_h) <- c("Able", "Mild", "Moderate", "Severe", "Profound", "Dead")
+  
   vivos_m <- as.data.frame(vivos_m)
   colnames(vivos_m) <- c("Able", "Mild", "Moderate", "Severe", "Profound", "Dead")
+  
   return(list(vivos_m, vivos_h))
+}
+proy_vivos_par <- function(n) {
+  # Crear un clúster usando la mitad de los núcleos disponibles
+  cl <- makeCluster(detectCores() / 2) 
+  
+  # Exportar las variables necesarias al clúster
+  clusterExport(
+    cl,
+    varlist = c("lista",
+                "portfolio",
+                "max_iters",
+                "sexos",
+                "hombres",
+                "mujeres",
+                "rango",
+                "v_power",
+                "proy_vivos"),
+    envir = environment()
+  )
+  
+  # Ejecutar la proyección en paralelo
+  resultados <- parSapply(cl, 1:n, function(x) {
+    proy_vivos()
+  })
+  
+  # Detener el clúster después de la ejecución
+  stopCluster(cl)
+  
+  # Resultado: una lista de matrices
+  return(resultados)
 }
