@@ -269,228 +269,49 @@ rm(
 ## Proyección de primas
 Esto es extra, no se piden. 
 ```{r}
-proy_prima <- function(interes, inflacion) {
-  # Inicialización de los valores
-  estados <- rep(1L, 102)
-  edades <- descripcion$edad
-  rango <- 120 - min(edades)
-  unifs <- matrix(runif(rango * 102), nrow = rango, ncol = 102)
-  v <- (1 + inflacion) / (1 + interes)
-  vp <- matrix(0, nrow = 102, ncol = 6)
-  v_power <- v^(0:rango)
-  max_iters <- 120 - edades
-  
-  # Iteración entre edades 
-  for (i in 1:rango) {
-    # Accede directamente a las probabilidades acumuladas en `lista`
-    locales <- sapply(1:102, function(x) {
-      if (i <= max_iters[x] && estados[x] < 6) {
-        lista[[x]][[estados[x]]][i, ]  # Ya es acumulada
-      } else {
-        rep(NA, 6)
-      }
-    })
-
-    # Actualización de valores presentes para estados vivos
-    vp[cbind(1:102, estados)] <- vp[cbind(1:102, estados)] + (v_power[i] * (estados < 6))
-    
-    # Localiza las probabilidades uniformes en la iteración
-    unif_col <- unifs[i, ]
-    
-    # Calcula los nuevos estados
-    nuevos_estados <- sapply(1:102, function(j) {
-      estado <- estados[j]
-      if (estado == 6) {
-        return(estado)
-      }
-      # Obtiene directamente las probabilidades acumuladas precalculadas
-      probs <- locales[(estado - 1):6, j]
-      
-      # Observa cuál es el nuevo estado por medio de comparación al `cumsum`
-      nuevo_estado <- which(probs > unif_col[j])[1]
-      
-      if (is.na(nuevo_estado)) {
-        return(estado)
-      } else if (estado == 1) {
-        return(nuevo_estado)
-      } else {
-        # Ajuste porque el `cumsum` empieza solo con las probabilidades necesarias
-        return(nuevo_estado + estado - 2)
-      }
-    })
-
-    # Actualización de estados y valores presentes de estados muertos
-    estados <- ifelse(estados == 6 & vp[cbind(1:102, 6)] == 0, estados, nuevos_estados)
-    vp[estados == 6 & vp[cbind(1:102, 6)] == 0, 6] <- v_power[i + 1]
-  }
-  
-  return(vp)
-}
-
-```
-
-```{r}
-ejecutar_proyecciones_par <- function(n, interes, inflacion) {
-  cl <- makeCluster(detectCores()/2) 
-
-  # Exportar las variables necesarias al clúster
-  clusterExport(
-    cl,
-    varlist = c("descripcion", "lista", "proy_prima", "interes", "inflacion"),
-    envir = environment())
-
-  # Ejecutar la proyección en paralelo
-  resultados <- parSapply(cl, 1:n, function(x) {
-    proy_prima(interes, inflacion)
-  })
-
-  # Lectura de los resultados
-  stopCluster(cl)
-  return(array(unlist(resultados), dim = c(102, 6, n)))
-}
-
+source("cod/proy_prima.R")
 ```
 
 ```{r}
 t <- proc.time()
-proyecciones_totales_parallel <- ejecutar_proyecciones_par(100, 0.07, 0.03)
+proy_prima_data <- proy_prima_par(10, 0.07, 0.03)
 proc.time()-t
 ```
 
+## Preparación para modelar estocásticamente
 ```{r}
-t <- proc.time()
-proyecciones <- list()
-for( i in 1:100){
-  proyecciones[[i]] <- proy_prima(0.07,0.03)
-}
-proc.time() - t
+source("cod/proyecciones.R")
 ```
+
+```{r}
+interes <- 0.07
+inflacion <- 0.03
+edades <- portfolio$edad
+rango <- 120 - min(edades)
+v <- (1 + inflacion) / (1 + interes)
+v_power <- v^(0:rango)
+max_iters <- 120 - edades
+```
+
+
+```{r}
+mujeres <- sum(portfolio$sexo == 2)
+hombres <- sum(portfolio$sexo == 1)
+sexos <- portfolio$sexo == 1
+```
+
 ## Proyeccion grupal de pagos por estados
 Este es el punto 2
-WARNING: En progreso. 
-```{r}
-proy_vp <- function(interes, inflacion) {
-  # Inicialización de los valores
-  estados <- rep(1, 5000)
-  edades <- portfolio$edad
-  rango <- 120 - min(edades)
-  unifs <- matrix(runif(rango * 5000), nrow = rango, ncol = 5000)
-  v <- (1 + inflacion) / (1 + interes)
-  vp <- matrix(0, nrow = 5000, ncol = 6)
-  v_power <- v^(0:rango)
-  max_iters <- 120 - edades
-  
-  # Iteración entre edades 
-  for (i in 1:rango) {
-    # Accede directamente a las probabilidades acumuladas en `lista`
-    locales <- sapply(1:5000, function(x) {
-      if (i <= max_iters[x] && estados[x] < 6) {
-        lista[[portfolio$id[x]]][[estados[x]]][i, ]
-      } else {
-        rep(NA, 6)
-      }
-    })
-
-    # Actualización de valores presentes para estados vivos
-    vp[cbind(1:5000, estados)] <- vp[cbind(1:5000, estados)] + (v_power[i] * (estados < 6))
-    
-    # Localiza las probabilidades uniformes en la iteración
-    unif_col <- unifs[i, ]
-    
-    # Calcula los nuevos estados
-    nuevos_estados <- sapply(1:5000, function(j) {
-      estado <- estados[j]
-      if (estado == 6) {
-        return(estado)
-      }
-      # Obtiene directamente las probabilidades acumuladas precalculadas
-      probs <- locales[(estado - 1):6, j]
-      
-      # Observa cuál es el nuevo estado por medio de comparación al `cumsum`
-      nuevo_estado <- which(probs > unif_col[j])[1]
-      
-      if (is.na(nuevo_estado)) {
-        return(estado)
-      } else if (estado == 1) {
-        return(nuevo_estado)
-      } else {
-        # Ajuste porque el `cumsum` empieza solo con las probabilidades necesarias
-        return(nuevo_estado + estado - 2)
-      }
-    })
-
-    # Actualización de estados y valores presentes de estados muertos
-    estados <- ifelse(estados == 6 & vp[cbind(1:5000, 6)] == 0, estados, nuevos_estados)
-    vp[estados == 6 & vp[cbind(1:5000, 6)] == 0, 6] <- v_power[i + 1]
-  }
-  vector <- lista[[1]]$Able[100,]
-  vector[1:6] <- sapply(as.data.frame(vp), sum)
-  return(vp)
-}
-```
 
 ```{r}
+set.seed(1)
 t <- proc.time()
-proy_vp_data <- proy_vp(0.07, 0.03)
+proy_vp_data <- proy_vp()
 proc.time()-t
 ```
 
 ## Proyección grupal de sobrevivencia
 Este es el punto 3
-```{r}
-proy_vivos <- function(){
-  estados <- rep(1, 5000)
-  edades <- portfolio$edad
-  rango <- 120 - min(edades)
-  unifs <- matrix(runif(rango * 5000), nrow = rango, ncol = 5000)
-  vivos <- matrix(0, nrow = 101, ncol = 6)
-  vivos[1, 1] <- 5000
-  max_iters <- 120 - edades
-
-  for (i in 1:rango) {
-    # Filtra las probabilidades para los estados activos
-    locales <- sapply(1:5000, function(x) {
-      if (i <= max_iters[x] && estados[x] < 6) {
-        lista[[portfolio$id[x]]][[estados[x]]][i, ]
-      } else {
-        rep(NA, 6)
-      }
-    })
-    
-    unif_col <- unifs[i, ]
-    
-    nuevos_estados <- sapply(1:5000, function(j) {
-      estado <- estados[j]
-      if (estado == 6) {
-        return(estado)
-      }
-      # Obtiene directamente las probabilidades acumuladas precalculadas
-      probs <- locales[(estado - 1):6, j]
-      
-      # Observa cuál es el nuevo estado por medio de comparación al `cumsum`
-      nuevo_estado <- which(probs > unif_col[j])[1]
-      
-      if (is.na(nuevo_estado)) {
-        return(estado)
-      } else if (estado == 1) {
-        return(nuevo_estado)
-      } else {
-        # Ajuste porque el `cumsum` empieza solo con las probabilidades necesarias
-        return(nuevo_estado + estado - 2)
-      }
-    })
-
-    estados <- ifelse(estados == 6, estados, nuevos_estados)
-    vivos[i+1, ] <- tabulate(estados, nbins = 6)
-  }
-
-  # Convertimos vivos a data frame
-  vivos_df <- as.data.frame(cbind(0:100, vivos))
-  colnames(vivos_df) <- c("x", "Able", "Mild", "Moderate", "Severe", "Profound", "Dead")
-  return(vivos_df)
-}
-
-```
 
 ```{r}
 t <- proc.time()
