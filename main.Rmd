@@ -325,15 +325,15 @@ for(i in 1:10){
 proc.time()-t
 ```
 
-### Paralelizadas
+### Paralelizado
 ```{r}
 t <- proc.time()
 proyeccion_data <- proyeccion_par(100, cores = 4)
 proc.time()-t
 ```
 
-## Resumen estocástico
-### Esperanza 
+# Resumen estocástico
+## Esperanza 
 
 ```{r}
 source("cod/resumen_estoc.R")
@@ -344,17 +344,116 @@ t <- proc.time()
 media <- esperanza(proyeccion_data)
 proc.time()-t
 ```
-
+## Percentil
 ```{r}
 t <- proc.time()
 percent.995 <- perc_0_995(proyeccion_data)
 proc.time()-t
 ```
 
+## Gráficos
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+fig <- ggplot(media[[1]], aes(x = x)) +
+  geom_line(aes(y = Able, color = "Able")) +
+  geom_line(aes(y = Mild, color = "Mild")) +
+  geom_line(aes(y = Moderate, color = "Moderate")) +
+  geom_line(aes(y = Severe, color = "Severe")) +
+  geom_line(aes(y = Profound, color = "Profound")) +
+  geom_line(aes(y = Dead, color = "Dead")) +
+  theme_minimal() +
+  labs(
+    title = "Media de hombres en cada estado",
+    x = "Edad",
+    y = "Valor"
+  ) +
+  scale_color_manual(values = c(
+    "Able" = "green",
+    "Mild" = "navyblue",
+    "Moderate" = "magenta",
+    "Severe" = "yellow",
+    "Profound" = "cyan",
+    "Dead" = "purple"
+  ))
 
+fig %>% ggplotly()
+```
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+fig <- ggplot(media[[2]], aes(x = x)) +
+  geom_line(aes(y = Able, color = "Able")) +
+  geom_line(aes(y = Mild, color = "Mild")) +
+  geom_line(aes(y = Moderate, color = "Moderate")) +
+  geom_line(aes(y = Severe, color = "Severe")) +
+  geom_line(aes(y = Profound, color = "Profound")) +
+  geom_line(aes(y = Dead, color = "Dead")) +
+  theme_minimal() +
+  labs(
+    title = "Media de mujeres en cada estado",
+    x = "Edad",
+    y = "Valor"
+  ) +
+  scale_color_manual(values = c(
+    "Able" = "green",
+    "Mild" = "navyblue",
+    "Moderate" = "magenta",
+    "Severe" = "yellow",
+    "Profound" = "cyan",
+    "Dead" = "purple"
+  ))
 
+fig %>% ggplotly()
+```
 
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+fig <- ggplot(percent.995[[1]], aes(x = x)) +
+  geom_line(aes(y = Able, color = "Able")) +
+  geom_line(aes(y = Mild, color = "Mild")) +
+  geom_line(aes(y = Moderate, color = "Moderate")) +
+  geom_line(aes(y = Severe, color = "Severe")) +
+  geom_line(aes(y = Profound, color = "Profound")) +
+  geom_line(aes(y = Dead, color = "Dead")) +
+  theme_minimal() +
+  labs(
+    title = "Media de Hombres en cada estado",
+    x = "Edad",
+    y = "Valor"
+  ) +
+  scale_color_manual(values = c(
+    "Able" = "green",
+    "Mild" = "navyblue",
+    "Moderate" = "magenta",
+    "Severe" = "yellow",
+    "Profound" = "cyan",
+    "Dead" = "purple"
+  ))
 
+fig %>% ggplotly()
+```
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+fig <- ggplot(percent.995[[2]], aes(x = x)) +
+  geom_line(aes(y = Able, color = "Able")) +
+  geom_line(aes(y = Mild, color = "Mild")) +
+  geom_line(aes(y = Moderate, color = "Moderate")) +
+  geom_line(aes(y = Severe, color = "Severe")) +
+  geom_line(aes(y = Profound, color = "Profound")) +
+  geom_line(aes(y = Dead, color = "Dead")) +
+  theme_minimal() +
+  labs(
+    title = "Media de mujeres en cada estado",
+    x = "Edad",
+    y = "Valor"
+  ) +
+  scale_color_manual(values = c(
+    "Able" = "green",
+    "Mild" = "navyblue",
+    "Moderate" = "magenta",
+    "Severe" = "yellow",
+    "Profound" = "cyan",
+    "Dead" = "purple"
+  ))
+
+fig %>% ggplotly()
+```
 
 
 

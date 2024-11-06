@@ -40,10 +40,12 @@ esperanza <- function(lista){
                 "From Moderate",
                 "From Severe",
                 "From Profound")
-  m_vivos_h <- as.data.frame(m_vivos_h)
+  m_vivos_h <- as.data.frame( m_vivos_h)
   colnames(m_vivos_h) <- names
+  m_vivos_h <- data.frame(x = 2024:2124, m_vivos_h)
   m_vivos_m <- as.data.frame(m_vivos_m)
   colnames(m_vivos_m) <- names
+  m_vivos_m <- data.frame(x = 2024:2124, m_vivos_m)
   m_vp_h <- as.data.frame(m_vp_h, row.names = rownames)
   colnames(m_vp_h) <- names
   m_vp_m <- as.data.frame(m_vp_m, row.names = rownames)
@@ -104,10 +106,12 @@ perc_0_995 <- function(lista){
                 "From Moderate",
                 "From Severe",
                 "From Profound")
-  m_vivos_h <- as.data.frame(m_vivos_h)
+  m_vivos_h <- as.data.frame( m_vivos_h)
   colnames(m_vivos_h) <- names
+  m_vivos_h <- data.frame(x = 2024:2124, m_vivos_h)
   m_vivos_m <- as.data.frame(m_vivos_m)
   colnames(m_vivos_m) <- names
+  m_vivos_m <- data.frame(x = 2024:2124, m_vivos_m)
   m_vp_h <- as.data.frame(m_vp_h, row.names = rownames)
   colnames(m_vp_h) <- names
   m_vp_m <- as.data.frame(m_vp_m, row.names = rownames)
