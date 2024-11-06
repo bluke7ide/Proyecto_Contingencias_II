@@ -279,10 +279,7 @@ proc.time()-t
 ```
 
 ## Preparación para modelar estocásticamente
-```{r}
-source("cod/proyecciones.R")
-```
-
+### Variables globales
 ```{r}
 interes <- 0.07
 inflacion <- 0.03
@@ -290,74 +287,69 @@ edades <- portfolio$edad
 rango <- 120 - min(edades)
 v <- (1 + inflacion) / (1 + interes)
 v_power <- v^(0:rango)
-max_iters <- 120 - edades
 mujeres <- sum(portfolio$sexo == 2)
 hombres <- sum(portfolio$sexo == 1)
 sexos <- portfolio$sexo == 1
+variables <- c("lista",
+                "portfolio",
+                "sexos",
+                "hombres",
+                "mujeres",
+                "rango",
+                "v_power",
+                "proyeccion") 
 ```
 
-## Proyeccion grupal de pagos por estados
-Este es el punto 2. En construcción. (no se sabe con certeza)
+### Funciones 
+```{r}
+source("cod/proyecciones.R")
+```
 
+## Proyeccion grupal de pagos y vivos
+### Única
 ```{r}
 set.seed(1)
 t <- proc.time()
-proy_vp_data <- list()
+prueba <- proyeccion()
+proc.time()-t
+```
+
+### Varias
+```{r}
+set.seed(1)
+t <- proc.time()
+prueba_gr <- list()
 for(i in 1:10){
-  proy_vp_data[[i]] <- proy_vp()
+  prueba_gr[[i]] <- proyeccion()
 }
 proc.time()-t
 ```
 
-## Proyección grupal de sobrevivencia
-Este es el punto 3. Definitivo (los resultados están bien)
+### Paralelizadas
+```{r}
+t <- proc.time()
+proyeccion_data <- proyeccion_par(100, cores = 4)
+proc.time()-t
+```
+
+## Resumen estocástico
+### Esperanza 
+
+```{r}
+source("cod/resumen_estoc.R")
+```
 
 ```{r}
 t <- proc.time()
-proy_vivos_data <- list()
-for(i in 1:10){
-  proy_vivos_data[[i]] <- proy_vivos()
-}
+media <- esperanza(proyeccion_data)
 proc.time()-t
 ```
 
 ```{r}
 t <- proc.time()
-proy_vivos_data <- proy_vivos_par(10)
+percent.995 <- perc_0_995(proyeccion_data)
 proc.time()-t
 ```
-
-## Percentiles
-```{r}
-n_filas <- nrow(proy_vivos_data[[1]])
-n_columnas <- ncol(proy_vivos_data[[1]])
-
-# Creamos una matriz para almacenar el percentil 50
-perc_50_h <- matrix(0, nrow = n_filas, ncol = n_columnas)
-perc_50_m <- matrix(0, nrow = n_filas, ncol = n_columnas)
-
-# Calculamos el percentil 50 para cada casilla
-for (fila in 1:n_filas) {
-  for (col in 1:n_columnas) {
-    # Extraemos los valores de la misma posición en cada matriz
-    val_h <- sapply(proy_vivos_data[1,], function(mat) mat[fila, col])
-    val_m <- sapply(proy_vivos_data[2,], function(mat) mat[fila, col])
-    # Calculamos el percentil 50 (mediana) y lo asignamos a la matriz resultante
-    perc_50_h[fila, col] <- median(val_h)
-    perc_50_m[fila, col] <- median(val_m)
-  }
-}
-
-# Convertimos a data.frame y asignamos nombres de columna
-perc_50_h <- as.data.frame(perc_50_h)
-colnames(perc_50_h) <- colnames(proy_vp_data[[1]])
-perc_50_m <- as.data.frame(perc_50_m)
-colnames(perc_50_m) <- colnames(proy_vp_data[[1]])
-
-```
-
-
-
 
 
 
