@@ -328,7 +328,7 @@ proc.time()-t
 ### Paralelizado
 ```{r}
 t <- proc.time()
-proyeccion_data <- proyeccion_par(100, cores = 4)
+proyeccion_data <- proyeccion_par(100, cores = 2)
 proc.time()-t
 ```
 
@@ -377,6 +377,7 @@ fig <- ggplot(media[[1]], aes(x = x)) +
 
 fig %>% ggplotly()
 ```
+
 ```{r, echo = FALSE, message=FALSE, warning=FALSE}
 fig <- ggplot(media[[2]], aes(x = x)) +
   geom_line(aes(y = Able, color = "Able")) +
@@ -413,7 +414,7 @@ fig <- ggplot(percent.995[[1]], aes(x = x)) +
   geom_line(aes(y = Dead, color = "Dead")) +
   theme_minimal() +
   labs(
-    title = "Media de Hombres en cada estado",
+    title = "Percentil 99.5 de Hombres en cada estado",
     x = "Edad",
     y = "Valor"
   ) +
@@ -439,7 +440,7 @@ fig <- ggplot(percent.995[[2]], aes(x = x)) +
   geom_line(aes(y = Dead, color = "Dead")) +
   theme_minimal() +
   labs(
-    title = "Media de mujeres en cada estado",
+    title = "Percentil 99.5 de mujeres en cada estado",
     x = "Edad",
     y = "Valor"
   ) +
