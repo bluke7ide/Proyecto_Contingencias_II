@@ -1,18 +1,19 @@
 proy_prima <- function(interes, inflacion) {
   # Inicialización de los valores
-  estados <- rep(1L, 102)
   edades <- descripcion$edad
   rango <- 120 - min(edades)
-  unifs <- matrix(runif(rango * 102), nrow = rango, ncol = 102)
+  unicos <- length(edades)
+  estados <- rep(1L, unicos)
+  unifs <- matrix(runif(rango * unicos), nrow = rango, ncol = unicos)
   v <- (1 + inflacion) / (1 + interes)
-  vp <- matrix(0, nrow = 102, ncol = 6)
+  vp <- matrix(0, nrow = unicos, ncol = 6)
   v_power <- v^(0:rango)
   max_iters <- 120 - edades
-  
+
   # Iteración entre edades 
   for (i in 1:rango) {
     # Accede directamente a las probabilidades acumuladas en `lista`
-    locales <- sapply(1:102, function(x) {
+    locales <- sapply(1:unicos, function(x) {
       if (i <= max_iters[x] && estados[x] < 6) {
         lista[[x]][[estados[x]]][i, ]  # Ya es acumulada
       } else {
@@ -21,13 +22,13 @@ proy_prima <- function(interes, inflacion) {
     })
     
     # Actualización de valores presentes para estados vivos
-    vp[cbind(1:102, estados)] <- vp[cbind(1:102, estados)] + (v_power[i] * (estados < 6))
+    vp[cbind(1:unicos, estados)] <- vp[cbind(1:unicos, estados)] + (v_power[i] * (estados < 6))
     
     # Localiza las probabilidades uniformes en la iteración
     unif_col <- unifs[i, ]
     
     # Calcula los nuevos estados
-    nuevos_estados <- sapply(1:102, function(j) {
+    nuevos_estados <- sapply(1:unicos, function(j) {
       estado <- estados[j]
       if (estado == 6) {
         return(estado)
@@ -49,8 +50,8 @@ proy_prima <- function(interes, inflacion) {
     })
     
     # Actualización de estados y valores presentes de estados muertos
-    estados <- ifelse(estados == 6 & vp[cbind(1:102, 6)] == 0, estados, nuevos_estados)
-    vp[estados == 6 & vp[cbind(1:102, 6)] == 0, 6] <- v_power[i + 1]
+    estados <- ifelse(estados == 6 & vp[cbind(1:unicos, 6)] == 0, estados, nuevos_estados)
+    vp[estados == 6 & vp[cbind(1:unicos, 6)] == 0, 6] <- v_power[i + 1]
   }
   
   return(vp)
@@ -72,5 +73,5 @@ proy_prima_par <- function(n, interes, inflacion) {
   
   # Lectura de los resultados
   stopCluster(cl)
-  return(array(unlist(resultados), dim = c(102, 6, n)))
+  return(array(unlist(resultados), dim = c(length(descripcion$edad), 6, n)))
 }

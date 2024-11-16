@@ -118,7 +118,6 @@ Esto se justifica con las probabilidades de transición de un año
 Temporalidad del seguro: vitalicio
 Es un seguro LTC, por lo que esperamos a que el asegurado tenga varios estados
 antes de morir. Si no fuera vitalicio, dejaríamos a medias a un asegurado.
-Temporalidad de pago de primas: hasta entrar en los estados severe/profound
 
 Inflación: 3%
   Caso pesimista: 8%
@@ -223,6 +222,13 @@ prueba <- calculo_vp(20, edad20, 0.07, 0.03)
                          2e6*prueba[5]))/(12*prueba[1])
 
 ```
+# Cálculo de las primas 
+```{r}
+primas_h <- sapply(20:70, function(x) calculo_vp(x, degradar_mort(x, 1), 0.07, 0.03))
+primas_m <- sapply(20:70, function(x) calculo_vp(x, degradar_mort(x, 2), 0.07, 0.03))
+```
+
+
 ```{r}
 rm(
   edad20, 
@@ -232,17 +238,16 @@ rm(
 )
 ```
 
-# Modelo estocástico
+
+# Portafolio
 ## Generación del portafolio
 ```{r}
 set.seed(70707)
-portfolio <- data.frame(edad = round(runif(5000, 19.5, 70.5)),
+portfolio <- data.frame(edad = round(rnorm(5000, mean = 45, sd = 6.5)),
                          sexo = round(runif(5000, 1, 2))) %>% 
   arrange(., edad, sexo) %>%
   mutate(id = dense_rank(paste(edad, sexo)))
 descripcion <- portfolio %>% count(edad, sexo)
-
-
 ```
 
 ```{r}
@@ -255,7 +260,20 @@ for(i in 1:length(descripcion$edad)) {
     t(apply(df[, 2:7], 1, cumsum))
   })
 }
+```
 
+## Prima nivelada
+```{r}
+primas_p <- sapply(1:length(descripcion$edad),
+                   function(x) calculo_vp(descripcion$edad[x],
+                                          degradar_mort(descripcion$edad[x],
+                                                        descripcion$sexo[x]),
+                                          0.07, 0.03) )
+```
+
+```{r}
+nivelada <- primas_p %*% descripcion$n
+(nivelada[6]*100e6 + 12*(1.5e6*nivelada[4] + 3e6*nivelada[5]))/(12*(nivelada[1]+nivelada[2]+nivelada[3]))
 ```
 
 ```{r}
@@ -266,6 +284,7 @@ rm(
 )
 ```
 
+# Modelo estocástico
 ## Proyección de primas
 Esto es extra, no se piden. 
 ```{r}
@@ -274,9 +293,19 @@ source("cod/proy_prima.R")
 
 ```{r}
 t <- proc.time()
-proy_prima_data <- proy_prima_par(10, 0.07, 0.03)
+proy_prima_data <- proy_prima_par(100, 0.07, 0.03)
+raw <- proy_prima_data
 proc.time()-t
 ```
+
+```{r}
+proy_prima_data <- list()
+for(i in 1:100){
+  proy_prima_data[[i]] <- raw[,,i]
+}
+proy_prima_data <- sapply(proy_prima_data, function(x) descripcion$n %*% x)
+```
+
 
 ## Preparación para modelar estocásticamente
 ### Variables globales
