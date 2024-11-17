@@ -202,17 +202,30 @@ for(i in 1:length(descripcion$edad)) {
 
 ## Prima nivelada
 ```{r}
-primas_p <- sapply(1:length(descripcion$edad),
+prima_n <- function(interes, inflacion){
+  primas_p <- sapply(1:length(descripcion$edad),
                    function(x) calculo_vp(descripcion$edad[x],
                                           degradar_mort(descripcion$edad[x],
                                                         descripcion$sexo[x]),
-                                          0.05, 0.03))
+                                          interes, inflacion))
+  nivelada <- primas_p %*% descripcion$n
+  return(prima(nivelada))
+}
 ```
   
 ```{r}
-nivelada <- primas_p %*% descripcion$n
-(nivelada <- prima(nivelada))
+(nivelada <- prima_n(0.05, 0.03))
 ```
+
+## Análisis de sensibilidad
+```{r}
+names <- paste(as.character(3:7), "%", sep = "")
+tabla <- sapply(3:7/100,  function(x) sapply(3:7/100, function(y) prima_n(x, y)))
+tabla <- data.frame(tabla, row.names = names)
+colnames(tabla) <- names
+tabla
+```
+
 
 ```{r}
 rm(
