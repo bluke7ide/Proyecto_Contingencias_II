@@ -121,7 +121,7 @@ calculo_acumulado(20, edad20sin_m)
 ```
 Hay una clara diferencia entre mejorías de mortalidades
 
-```{r}
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
 rm(
   add_mort,
   deteriorate,
@@ -163,15 +163,38 @@ prueba <- calculo_vp(20, edad20, 0.07, 0.03)
 # Cálculo de las primas 
 ```{r}
 source("cod/prima.R")
-primas_h <- sapply(20:70, function(x) prima(calculo_vp(x, degradar_mort(x, 1), 0.05, 0.03)))
-primas_m <- sapply(20:70, function(x) prima(calculo_vp(x, degradar_mort(x, 2), 0.05, 0.03)))
+# primas_h <- sapply(20:70, function(x) prima(calculo_vp(x, degradar_mort(x, 1), 0.05, 0.03)))
+# primas_m <- sapply(20:70, function(x) prima(calculo_vp(x, degradar_mort(x, 2), 0.05, 0.03)))
+# df_primas <- data.frame(x = 20:70, hombres = primas_h, mujeres = primas_m)
+# write_xlsx(df_primas, "res/primas.xlsx")
+df_primas <- read_xlsx("res/primas.xlsx")
 ```
 
-```{r}
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+fig <- ggplot(df_primas, aes(x = x)) +
+  geom_line(aes(y = hombres, color = "Hombres")) +
+  geom_line(aes(y = mujeres, color = "Mujeres")) +
+  theme_minimal() +
+  labs(
+    title = "Primas de riesgo para cada edad y sexo",
+    x = "Edad",
+    y = "Valor"
+  ) +
+  scale_color_manual(values = c(
+    "Hombres" = "#0073E6",
+    "Mujeres" = "#FF1493"
+  ))
+
+fig %>% ggplotly()
+```
+
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
 rm(
   edad20, 
   prueba,
-  calculo_acumulado
+  calculo_acumulado,
+  df_primas
 )
 ```
 
@@ -200,6 +223,40 @@ for(i in 1:length(descripcion$edad)) {
 }
 ```
 
+## Representación del portafolio
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+frecuencias <- descripcion %>%
+  mutate(
+    GrupoEdad = cut(edad, 
+                    breaks = seq(20, 75, by = 5),  
+                    right = FALSE,    
+                    labels = paste0(seq(20, 70, by = 5), "-", seq(25, 75, by = 5))) 
+  ) %>%
+  group_by(GrupoEdad, sexo) %>%
+  summarise(Frecuencia = sum(n), .groups = "drop") %>%
+  mutate(sexo = case_when(
+    sexo == 1 ~ "Hombres",
+    sexo == 2 ~ "Mujeres"
+  ))
+
+fig <- ggplot(frecuencias, aes(x = GrupoEdad, y = Frecuencia, fill = sexo)) +
+  geom_bar(stat="identity", position="dodge") +
+  labs(title="Distribución del portafolio por sexo", x="Edad", y="Frecuencia") +
+  scale_fill_manual(name="Sexo",
+                    values=c("Hombres" = "#0073E6", "Mujeres" = "#FF1493"),
+                    labels=c("Hombres", "Mujeres"))+
+  theme_minimal()
+fig %>% ggplotly()
+```
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+fig <- ggplot(frecuencias, aes(x=GrupoEdad, y=Frecuencia)) +
+  geom_bar(stat="identity", fill="green4") +
+  labs(title="Distribución de rangos de edad del portafolio", x="Edad", y="Frecuencia") +
+  theme_minimal()
+fig %>% ggplotly()
+```
+
 ## Prima nivelada
 ```{r}
 prima_n <- function(interes, inflacion){
@@ -214,27 +271,33 @@ prima_n <- function(interes, inflacion){
 ```
   
 ```{r}
+t <- proc.time()
 (nivelada <- prima_n(0.05, 0.03))
+proc.time()-t
 ```
 
 ## Análisis de sensibilidad
 ```{r}
-names <- paste(as.character(3:7), "%", sep = "")
-tabla <- sapply(3:7/100,  function(x) sapply(3:7/100, function(y) prima_n(x, y)))
-tabla <- data.frame(tabla, row.names = names)
-colnames(tabla) <- names
+# names <- paste(as.character(3:7), "%", sep = "")
+# tabla <- sapply(3:7/100,  function(x) sapply(3:7/100, function(y) prima_n(x, y)))
+# tabla <- data.frame(tabla, row.names = names)
+# colnames(tabla) <- names
+# write_xlsx(tabla, "res/sensibilidad.xlsx")
+tabla <- read_xlsx("res/sensibilidad.xlsx")
 tabla
 ```
 
-
-```{r}
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
 rm(
   degradar_mort,
   red_factor_mort,
   red_factor_rest,
   calculo_vp,
-  i,
-  primas_p
+  i, 
+  frecuencias,
+  prob_matrices,
+  prima_n,
+  tabla
 )
 ```
 
@@ -246,21 +309,31 @@ source("cod/proy_prima.R")
 ```
 
 ```{r}
-t <- proc.time()
-proy_prima_data <- proy_prima_par(1000, 0.07, 0.03)
-raw <- proy_prima_data
-proc.time()-t
+# set.seed(70707)
+# t <- proc.time()
+# proy_prima_data <- proy_prima_par(10000, 0.05, 0.03)
+# raw <- proy_prima_data
+# proc.time()-t
 ```
 
 Calculamos la prima estocástica al percentil 99.5
 ```{r}
-proy_prima_data <- list()
-for(i in 1:100){
-  proy_prima_data[[i]] <- raw[,,i]
-}
-proy_prima_data <- sapply(proy_prima_data, function(x) prima(descripcion$n %*% x))
-quantile(proy_prima_data, 0.005)
+# proy_prima_data <- list()
+# for(i in 1:10000){
+#   proy_prima_data[[i]] <- raw[,,i]
+# }
+# proy_prima_data <- sapply(proy_prima_data, function(x) prima(descripcion$n %*% x))
+# write_xlsx(data.frame(proy_prima_data), "res/proy_prima.xlsx")
+proy_prima_data <- read_xlsx("res/proy_prima.xlsx")
+quantile(proy_prima_data[[1]], 0.005)
 ```
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+rm(proy_prima,
+   proy_prima_par,
+   proy_prima_data)
+```
+
 
 ## Preparación para modelar estocásticamente
 ### Variables globales
@@ -304,6 +377,27 @@ proc.time()-t
 # proyeccion_data <- proyeccion_par(100, cores = 2)
 # proc.time()-t
 ```
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+rm(interes,
+   inflacion,
+   edades,
+   rango,
+   v,
+   v_power,
+   mujeres,
+   hombres,
+   sexos,
+   variables,
+   prueba,
+   proyeccion,
+   proyeccion_par,
+   prima,
+   flujos,
+   t,
+   nivelada)
+```
+
 # Resumen estocástico
 ## Esperanza 
 ```{r}
