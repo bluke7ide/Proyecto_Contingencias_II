@@ -72,8 +72,11 @@ fig <- ggplot(Males$Able, aes(x = x)) +
     "Profound" = "cyan",
     "Dead" = "purple"
   ))
-
 fig %>% ggplotly()
+```
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+ggsave("res/fig/hombres_able.pdf", fig, width = 8, height = 6)
 ```
 
 ```{r, echo = FALSE, message=FALSE, warning=FALSE}
@@ -100,6 +103,10 @@ fig <- ggplot(Females$Able, aes(x = x)) +
   ))
 
 fig %>% ggplotly()
+```
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+ggsave("res/fig/mujeres_able.pdf", fig, width = 8, height = 6)
 ```
 
 # Mejora de mortalidades en el tiempo y mejora de transiciones de empeoramiento
@@ -188,6 +195,9 @@ fig <- ggplot(df_primas, aes(x = x)) +
 fig %>% ggplotly()
 ```
 
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+ggsave("res/fig/primas.pdf", fig, width = 8, height = 6)
+```
 
 ```{r, echo = FALSE, message=FALSE, warning=FALSE}
 rm(
@@ -250,11 +260,19 @@ fig %>% ggplotly()
 ```
 
 ```{r, echo = FALSE, message=FALSE, warning=FALSE}
+ggsave("res/fig/port_sexos.pdf", fig, width = 8, height = 6)
+```
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
 fig <- ggplot(frecuencias, aes(x=GrupoEdad, y=Frecuencia)) +
   geom_bar(stat="identity", fill="green4") +
   labs(title="Distribución de rangos de edad del portafolio", x="Edad", y="Frecuencia") +
   theme_minimal()
 fig %>% ggplotly()
+```
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+ggsave("res/fig/port_edades.pdf", fig, width = 8, height = 6)
 ```
 
 ## Prima nivelada
@@ -467,6 +485,10 @@ fig %>% ggplotly()
 ```
 
 ```{r, echo = FALSE, message=FALSE, warning=FALSE}
+ggsave("res/fig/media_h.pdf", fig, width = 8, height = 6)
+```
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
 fig <- ggplot(media[[2]], aes(x = x)) +
   geom_line(aes(y = Able, color = "Able")) +
   geom_line(aes(y = Mild, color = "Mild")) +
@@ -490,6 +512,10 @@ fig <- ggplot(media[[2]], aes(x = x)) +
   ))
 
 fig %>% ggplotly()
+```
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+ggsave("res/fig/media_m.pdf", fig, width = 8, height = 6)
 ```
 
 ```{r, echo = FALSE, message=FALSE, warning=FALSE}
@@ -519,6 +545,10 @@ fig %>% ggplotly()
 ```
 
 ```{r, echo = FALSE, message=FALSE, warning=FALSE}
+ggsave("res/fig/perc_h.pdf", fig, width = 8, height = 6)
+```
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
 fig <- ggplot(percent.995[[2]], aes(x = x)) +
   geom_line(aes(y = Able, color = "Able")) +
   geom_line(aes(y = Mild, color = "Mild")) +
@@ -542,6 +572,10 @@ fig <- ggplot(percent.995[[2]], aes(x = x)) +
   ))
 
 fig %>% ggplotly()
+```
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+ggsave("res/fig/perc_m.pdf", fig, width = 8, height = 6)
 ```
 
 ## Ingresos y egresos
