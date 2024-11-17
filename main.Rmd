@@ -224,7 +224,7 @@ prueba <- calculo_vp(20, edad20, 0.07, 0.03)
 ```
 # Cálculo de las primas 
 ```{r}
-primas_h <- sapply(20:70, function(x) calculo_vp(x, degradar_mort(x, 1), 0.07, 0.03))
+primas_h <- sapply(20:70, function(x) calculo_vp(x, degradar_mort(x, 1), 0.05, 0.03))
 primas_m <- sapply(20:70, function(x) calculo_vp(x, degradar_mort(x, 2), 0.07, 0.03))
 ```
 
@@ -236,12 +236,6 @@ rm(
   calculo_vp
 )
 ```
-
-```{r}
-source("cod/prima.R")
-prima(primas_h[,26])
-```
-
 
 # Portafolio
 ## Generación del portafolio
@@ -272,12 +266,14 @@ primas_p <- sapply(1:length(descripcion$edad),
                    function(x) calculo_vp(descripcion$edad[x],
                                           degradar_mort(descripcion$edad[x],
                                                         descripcion$sexo[x]),
-                                          0.07, 0.03) )
+                                          0.05, 0.03) )
 ```
   
 ```{r}
+source("cod/prima.R")
+prima(primas_h[,26])
 nivelada <- primas_p %*% descripcion$n
-prima(nivelada)
+(nivelada <- prima(nivelada))
 ```
 
 ```{r}
@@ -364,10 +360,8 @@ t <- proc.time()
 proyeccion_data <- proyeccion_par(100, cores = 2)
 proc.time()-t
 ```
-
 # Resumen estocástico
 ## Esperanza 
-
 ```{r}
 source("cod/resumen_estoc.R")
 ```
@@ -377,11 +371,43 @@ t <- proc.time()
 media <- esperanza(proyeccion_data)
 proc.time()-t
 ```
+
 ## Percentil
 ```{r}
 t <- proc.time()
 percent.995 <- perc_0_995(proyeccion_data)
 proc.time()-t
+```
+
+## Guardar las proyecciones
+```{r}
+write_xlsx(media, "res/media.xlsx")
+write_xlsx(percent.995, "res/percentil.xlsx")
+```
+
+## Leer las proyecciones
+```{r}
+media <- list(
+  read_xlsx("res/media.xlsx", sheet = 1),
+  read_xlsx("res/media.xlsx", sheet = 2),
+  read_xlsx("res/media.xlsx", sheet = 3),
+  read_xlsx("res/media.xlsx", sheet = 4)
+)
+percent.995 <- list(
+  read_xlsx("res/percentil.xlsx", sheet = 1),
+  read_xlsx("res/percentil.xlsx", sheet = 2),
+  read_xlsx("res/percentil.xlsx", sheet = 3),
+  read_xlsx("res/percentil.xlsx", sheet = 4)
+)
+```
+
+
+```{r}
+sum(percent.995[[3]][[1]])
+sum(percent.995[[3]][[2]])
+
+sum(percent.995[[4]][[1]])
+sum(percent.995[[4]][[2]])
 ```
 
 ## Gráficos
@@ -489,9 +515,22 @@ fig <- ggplot(percent.995[[2]], aes(x = x)) +
 fig %>% ggplotly()
 ```
 
+## Ingresos y egresos
+```{r}
+sum(media[[3]][[1]])
+sum(media[[3]][[2]])
 
+sum(media[[4]][[1]])
+sum(media[[4]][[2]])
+```
 
+```{r}
+sum(percent.995[[3]][[1]])
+sum(percent.995[[3]][[2]])
 
+sum(percent.995[[4]][[1]])
+sum(percent.995[[4]][[2]])
+```
 
 
 
