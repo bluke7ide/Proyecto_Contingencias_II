@@ -60,7 +60,7 @@ proyeccion <- function(){
 #' @param cores número de cores para la paralelización. Con cota superior
 proyeccion_par <- function(n, cores) {
   # Crear un clúster seguro
-  cl <- makeCluster(min(detectCores()/2, cores)) 
+  cl <- makeCluster(cores) #min(detectCores()/2,
   # Exportar las variables necesarias al clúster
   clusterExport(
     cl,
