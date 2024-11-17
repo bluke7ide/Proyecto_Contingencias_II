@@ -1,9 +1,18 @@
+#' Calcula la probabilidad de que una persona de edad x con sexo sex
+#' de estado ini se deteriore, no mejorar a un estado end.
+#' @param x edad de la persona
+#' @param sex sexo de la persona
+#' @param ini estado inicial de la persona
+#' @param end estado final de la persona
 deteriorate <- function(x, sex, ini, end){
-  # Checked
+  #' Calcula la probabilidad de entrar a cualquier estado
+  #' @param x la edad de la persona
   new_car <- function(x, alpha, A, B, C, D, E){
     core <- A + (D-A)/(1+B^{C-x})
     return(alpha*(core*(1-exp(-((x-E)/4)^2)/3)))
   }
+  #' Calcula la probabilidad de entrar a un estado, dado que entró a uno
+  #' @param x la edad de la persona
   severity <- function(x, w, P, Q, R, n){
     f <- P + (1-P)/(1+Q^(R-x))
     scale <- 0
@@ -13,6 +22,7 @@ deteriorate <- function(x, sex, ini, end){
     return((w[n]*f^(n-1))/scale)
   }
   
+  # Parámetros de las funciones
   if(sex == 1){
     alpha <- 7.95952
     A <- 0.000959
@@ -38,23 +48,36 @@ deteriorate <- function(x, sex, ini, end){
     w <- c(1, 0.7671, 1.618, 4.602)
     factor <- 1.25
   }
+  # Cálculo previo 
   p1 <- new_car(x, alpha, A, B, C, D, E)
   p2 <- severity(x, w, P, Q, R, end)
+  
+  # Factor de deterioro
   return(p1*p2*factor^{ini})
 }
 
+#' Adiciona una probabilidad a los estados Severe y Profound
+#' @param x la edad de la persona
+#' @param n el estado de la persona. Si es <2, entonces no hace nada
 add_mort <- function(x, n){
-  # Checked
   return(0.15*max(n-2,0)/((1+1.1^{50-x})*5))
 }
 
+#' Calcula la probabilidad de muerte de una persona de edad x
+#' de sexo sex con un estado n
+#' @param x la edad de la persona
+#' @param n el estado de la persona. Si es <2, entonces solo accede
+#' @param sex sexo de la persona
 prob <- function(x, n, sex){
-  # Checked
+  # Accede a las tablas de mortalidades para adicionarle la mortalidad extra
   return((Aus_tables[[sex]]$`q_{x}`[x+1]) + add_mort(x,n))
 }
 
+#' Calcula el factor de reducción para las transiciones de estados
+#' @param x la edad de la persona
+#' @param t el tiempo a aplicar
+#' @param series conjunto de constantes a aplicar
 red_factor_rest <- function(x, t, series){
-  # Mejora las transiciones con respecto al tiempo
   k <- 0.3
   if(series == 1){
     c <- 0.625
@@ -76,6 +99,10 @@ red_factor_rest <- function(x, t, series){
   return(alpha + (1-alpha)*(1-f)^(t/20))
 }
 
+#' Calcula el factor de reducción para las mortalidades de estados
+#' @param x la edad de la persona
+#' @param t el tiempo a aplicar
+#' @param sex sexo de la persona
 red_factor_mort <- function(x, t, sex){
   if (sex == 1) {
     c <- 0.163
@@ -96,6 +123,9 @@ red_factor_mort <- function(x, t, sex){
   return(alpha + (1-alpha)*(1-f)^(t/20))
 }
 
+#' Calcula el factor de reducción para normalizar las probabilidades
+#' @param x la edad de la persona
+#' @param sex sexo de la persona
 red_factor_norm <- function(x, sex){
   if (sex == 1) {
     c <- 0.373

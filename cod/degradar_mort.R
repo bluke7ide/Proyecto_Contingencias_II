@@ -1,9 +1,13 @@
+#' Construye las tablas para una edad x con deterioro en el tiempo, año 2024
+#' @param x edad de la persona
+#' @param sex sexo a calcular las probabilidades
 degradar_mort <- function(x, sex){
   if(sex == 1){
     data <- Males
   } else {
     data <- Females
   }
+  # Toma las probabilidades que le importan
   Able <- data$Able[(x+1):120,]
   Mild <- data$Mild[(x+1):120,]
   Moderate <- data$Moderate[(x+1):120,]
@@ -14,7 +18,7 @@ degradar_mort <- function(x, sex){
   degr <- sapply(x:119, function(y) red_factor_rest(y, 28 + y - x, 2))
   mort <- sapply(x:119, function(y) red_factor_mort(y, 28 + y - x, 2))
   
-  # Mejora las transiciones que empeoran
+  # Mejora las degradaciones
   Able$Mild <- Able$Mild * degr
   Able$Moderate <- Able$Moderate * degr
   Able$Severe <- Able$Severe * degr

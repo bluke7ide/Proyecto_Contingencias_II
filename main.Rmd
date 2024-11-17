@@ -43,7 +43,7 @@ fig <- ggplot(degradacion, aes(x = x)) +
 fig %>% ggplotly()
 ```
 
-# Empezar las tablas
+# Construir las tablas
 ```{r}
 source("cod/tablas.R")
 Males <- tablas(1)
@@ -103,50 +103,13 @@ fig %>% ggplotly()
 ```
 
 # Mejora de mortalidades en el tiempo y mejora de transiciones de empeoramiento
-
 ```{r}
 source("cod/degradar_mort.R")
-```
-
-```{r}
+source("cod/calculo_anualidades.R")
 edad20 <- degradar_mort(20, 1)
 ```
 
-# Diseño del producto
-Pago de primas: anual
-Esto se justifica con las probabilidades de transición de un año
-Temporalidad del seguro: vitalicio
-Es un seguro LTC, por lo que esperamos a que el asegurado tenga varios estados
-antes de morir. Si no fuera vitalicio, dejaríamos a medias a un asegurado.
-
-Inflación: 3%
-  Caso pesimista: 8%
-  Caso optimista: -1%
-  
-Tasa de interés: 5%
-  Caso pesimista: 3%
-  Caso optimista: 6.5%
-
-
-```{r}
-calculo_acumulado <- function(x, tables){
-  # Por si acaso, estados termina en 000001 porque multiplicamos todas las transiciones
-  t1 <- tables$Able %>% select(-x) 
-  t2 <- tables$Mild %>% select(-x) 
-  t3 <- tables$Moderate %>% select(-x)
-  t4 <- tables$Severe %>% select(-x)
-  t5 <- tables$Profound %>% select(-x)
-  estados <- as.numeric(t1[1,])
-  suma <- estados
-  for(i in 2:(120-x)){
-    matriz_t <- rbind(t1[i,], t2[i,], t3[i,], t4[i,], t5[i,], c(0,0,0,0,0,1)) 
-    matriz_t <- as.matrix(matriz_t)
-    estados <- estados %*% matriz_t
-    suma <- suma + estados
-  }
-  return(suma)
-}
-```
+## Comprobación de mejoras
 
 ```{r}
 calculo_acumulado(20, edad20)
@@ -172,34 +135,8 @@ rm(
 )
 ```
 
-# Cálculo de valores presentes
-```{r}
-calculo_vp <- function(x, tables, interes, inflacion){
-  # Por si acaso, termina en 000001 porque estamos multiplicando todas las transiciones
-  v <- (1+inflacion)/(1+interes)
-  t1 <- tables$Able %>% select(-x)
-  t2 <- tables$Mild %>% select(-x) 
-  t3 <- tables$Moderate %>% select(-x)
-  t4 <- tables$Severe %>% select(-x)
-  t5 <- tables$Profound %>% select(-x)
-  estados <- as.numeric(t1[1,])
-  suma <- estados
-  seguro <- 0
-  for(i in 2:(120-x)){
-    matriz_t <- rbind(t1[i,], t2[i,], t3[i,], t4[i,], t5[i,], c(0,0,0,0,0,1)) 
-    matriz_t <- as.matrix(matriz_t)
-    temp <- estados %*% matriz_t
-    
-    # Personalizable según el tipo de desembolso/prima
-    seguro <- seguro  + (temp[6]- estados[6])*v^i
-    estados <- temp
-    suma <- suma + estados*v^(i-1)
-  }
-  suma[6] <- seguro
-  return(suma)
-}
-```
-
+## Cálculo de valores presentes
+Se puede realizar varios seguros con los resultados de calculo_vp. Nótese que estamos en edad 20
 ```{r}
 prueba <- calculo_vp(20, edad20, 0.07, 0.03)
 
@@ -207,7 +144,7 @@ prueba <- calculo_vp(20, edad20, 0.07, 0.03)
 (prueba[6]*100e6 )/(12*prueba[1])
 
 # Seguro de vida con anualidades en caso de Severe o Profound, pagando Mild y Moderate
-(prueba[6]*100e6 + 12*(1.5e6*prueba[4] + 3e6*prueba[5])  )/(12*(prueba[1]+prueba[2]+prueba[3]))
+(prueba[6]*100e6 + 12*(1.5e6*prueba[4] + 3e6*prueba[5]))/(12*(prueba[1]+prueba[2]+prueba[3]))
 
 # Seguro de vida con anualidades pagando 0.25e6 en aumento de estado
 (prueba[6]*100e6 + 12*(0.25e6*prueba[2] +
@@ -222,23 +159,25 @@ prueba <- calculo_vp(20, edad20, 0.07, 0.03)
                          2e6*prueba[5]))/(12*prueba[1])
 
 ```
+
 # Cálculo de las primas 
 ```{r}
-primas_h <- sapply(20:70, function(x) calculo_vp(x, degradar_mort(x, 1), 0.05, 0.03))
-primas_m <- sapply(20:70, function(x) calculo_vp(x, degradar_mort(x, 2), 0.07, 0.03))
+source("cod/prima.R")
+primas_h <- sapply(20:70, function(x) prima(calculo_vp(x, degradar_mort(x, 1), 0.05, 0.03)))
+primas_m <- sapply(20:70, function(x) prima(calculo_vp(x, degradar_mort(x, 2), 0.05, 0.03)))
 ```
 
 ```{r}
 rm(
   edad20, 
   prueba,
-  calculo_acumulado,
-  calculo_vp
+  calculo_acumulado
 )
 ```
 
 # Portafolio
 ## Generación del portafolio
+Se utiliza una normal para centrar las observaciones en una edad de interés 
 ```{r}
 set.seed(70707)
 portfolio <- data.frame(edad = round(rnorm(5000, mean = 45, sd = 6.5)),
@@ -248,12 +187,13 @@ portfolio <- data.frame(edad = round(rnorm(5000, mean = 45, sd = 6.5)),
 descripcion <- portfolio %>% count(edad, sexo)
 ```
 
+Y se genera la lista de probabilidades
 ```{r}
 lista <- list()
 for(i in 1:length(descripcion$edad)) {
   prob_matrices <- degradar_mort(descripcion$edad[i], descripcion$sexo[i])
   
-  # Aplicar `cumsum` a cada dataframe dentro de `prob_matrices` (uno por estado)
+  # Se acumulan las probabilidades previo a la simulación estocástica
   lista[[i]] <- lapply(prob_matrices, function(df) {
     t(apply(df[, 2:7], 1, cumsum))
   })
@@ -266,12 +206,10 @@ primas_p <- sapply(1:length(descripcion$edad),
                    function(x) calculo_vp(descripcion$edad[x],
                                           degradar_mort(descripcion$edad[x],
                                                         descripcion$sexo[x]),
-                                          0.05, 0.03) )
+                                          0.05, 0.03))
 ```
   
 ```{r}
-source("cod/prima.R")
-prima(primas_h[,26])
 nivelada <- primas_p %*% descripcion$n
 (nivelada <- prima(nivelada))
 ```
@@ -280,7 +218,10 @@ nivelada <- primas_p %*% descripcion$n
 rm(
   degradar_mort,
   red_factor_mort,
-  red_factor_rest
+  red_factor_rest,
+  calculo_vp,
+  i,
+  primas_p
 )
 ```
 
@@ -293,19 +234,20 @@ source("cod/proy_prima.R")
 
 ```{r}
 t <- proc.time()
-proy_prima_data <- proy_prima_par(100, 0.07, 0.03)
+proy_prima_data <- proy_prima_par(1000, 0.07, 0.03)
 raw <- proy_prima_data
 proc.time()-t
 ```
 
+Calculamos la prima estocástica al percentil 99.5
 ```{r}
 proy_prima_data <- list()
 for(i in 1:100){
   proy_prima_data[[i]] <- raw[,,i]
 }
-proy_prima_data <- sapply(proy_prima_data, function(x) descripcion$n %*% x)
+proy_prima_data <- sapply(proy_prima_data, function(x) prima(descripcion$n %*% x))
+quantile(proy_prima_data, 0.005)
 ```
-
 
 ## Preparación para modelar estocásticamente
 ### Variables globales
@@ -343,22 +285,11 @@ prueba <- proyeccion()
 proc.time()-t
 ```
 
-### Varias
-```{r}
-set.seed(1)
-t <- proc.time()
-prueba_gr <- list()
-for(i in 1:10){
-  prueba_gr[[i]] <- proyeccion()
-}
-proc.time()-t
-```
-
 ### Paralelizado
 ```{r}
-t <- proc.time()
-proyeccion_data <- proyeccion_par(100, cores = 2)
-proc.time()-t
+# t <- proc.time()
+# proyeccion_data <- proyeccion_par(100, cores = 2)
+# proc.time()-t
 ```
 # Resumen estocástico
 ## Esperanza 
@@ -367,22 +298,22 @@ source("cod/resumen_estoc.R")
 ```
 
 ```{r}
-t <- proc.time()
-media <- esperanza(proyeccion_data)
-proc.time()-t
+# t <- proc.time()
+# media <- esperanza(proyeccion_data)
+# proc.time()-t
 ```
 
 ## Percentil
 ```{r}
-t <- proc.time()
-percent.995 <- perc_0_995(proyeccion_data)
-proc.time()-t
+# t <- proc.time()
+# percent.995 <- perc_0_995(proyeccion_data)
+# proc.time()-t
 ```
 
 ## Guardar las proyecciones
 ```{r}
-write_xlsx(media, "res/media.xlsx")
-write_xlsx(percent.995, "res/percentil.xlsx")
+# write_xlsx(media, "res/media.xlsx")
+# write_xlsx(percent.995, "res/percentil.xlsx")
 ```
 
 ## Leer las proyecciones
@@ -399,15 +330,6 @@ percent.995 <- list(
   read_xlsx("res/percentil.xlsx", sheet = 3),
   read_xlsx("res/percentil.xlsx", sheet = 4)
 )
-```
-
-
-```{r}
-sum(percent.995[[3]][[1]])
-sum(percent.995[[3]][[2]])
-
-sum(percent.995[[4]][[1]])
-sum(percent.995[[4]][[2]])
 ```
 
 ## Gráficos

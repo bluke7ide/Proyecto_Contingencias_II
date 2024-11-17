@@ -1,3 +1,4 @@
+#' Función sin parametros para paralelizar, que hace la proyección estocástica
 proyeccion <- function(){
   # Inicializa las matrices
   estados <- rep(1, 5000)
@@ -54,6 +55,9 @@ proyeccion <- function(){
   return(list(vivos_h, vivos_m, vp_h, vp_m))
 }
 
+#' Paraleliza la función anterior, para una mejor eficiencia
+#' @param n número de iteraciones
+#' @param cores número de cores para la paralelización. Con cota superior
 proyeccion_par <- function(n, cores) {
   # Crear un clúster seguro
   cl <- makeCluster(min(detectCores()/2, cores)) 

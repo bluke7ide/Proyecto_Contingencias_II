@@ -1,7 +1,11 @@
+#' Calcula la prima gracias a un desenglose de calculo_vp o cualquiera
+#' @param vps anualidades/seguro para cada estado
 prima <- function(vps){
   return((5e6*vps[6] + 12*(1e6*vps[4] + 2e6*vps[5]))/(12*(vps[1] + 0.5*vps[2])))
 }
 
+#' Calcula los flujos dado un dataframe de estados
+#' @param dvps anualidades/seguro para cada estado partiendo de un estado anterior
 flujos <- function(dvps){
   names <- row.names(dvps)
   dvps <- as.matrix(dvps)

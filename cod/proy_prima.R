@@ -1,3 +1,6 @@
+#' Proyecta la prima estocástica, para todas las personas
+#' @param interes tasa de interés a tomar
+#' @param inflacion tasa de inflación a tomar
 proy_prima <- function(interes, inflacion) {
   # Inicialización de los valores
   edades <- descripcion$edad
@@ -36,7 +39,7 @@ proy_prima <- function(interes, inflacion) {
       # Obtiene directamente las probabilidades acumuladas precalculadas
       probs <- locales[(estado - 1):6, j]
       
-      # Observa cuál es el nuevo estado por medio de comparación al `cumsum`
+      # Observa cuál es el nuevo estado por medio de comparación al cumsum
       nuevo_estado <- which(probs > unif_col[j])[1]
       
       if (is.na(nuevo_estado)) {
@@ -44,7 +47,7 @@ proy_prima <- function(interes, inflacion) {
       } else if (estado == 1) {
         return(nuevo_estado)
       } else {
-        # Ajuste porque el `cumsum` empieza solo con las probabilidades necesarias
+        # Ajuste porque el cumsum empieza solo con las probabilidades necesarias
         return(nuevo_estado + estado - 2)
       }
     })
@@ -57,21 +60,19 @@ proy_prima <- function(interes, inflacion) {
   return(vp)
 }
 
+#' Ejecuta la proyección en paralelo
+#' @param n número de iteraciones
+#' @param interes tasa de interés a tomar
+#' @param inflacion tasa de inflación a tomar
 proy_prima_par <- function(n, interes, inflacion) {
   cl <- makeCluster(detectCores()/2) 
-  
-  # Exportar las variables necesarias al clúster
   clusterExport(
     cl,
     varlist = c("descripcion", "lista", "proy_prima", "interes", "inflacion"),
     envir = environment())
-  
-  # Ejecutar la proyección en paralelo
   resultados <- parSapply(cl, 1:n, function(x) {
     proy_prima(interes, inflacion)
   })
-  
-  # Lectura de los resultados
   stopCluster(cl)
   return(array(unlist(resultados), dim = c(length(descripcion$edad), 6, n)))
 }
