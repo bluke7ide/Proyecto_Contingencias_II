@@ -228,7 +228,6 @@ primas_h <- sapply(20:70, function(x) calculo_vp(x, degradar_mort(x, 1), 0.07, 0
 primas_m <- sapply(20:70, function(x) calculo_vp(x, degradar_mort(x, 2), 0.07, 0.03))
 ```
 
-
 ```{r}
 rm(
   edad20, 
@@ -236,6 +235,11 @@ rm(
   calculo_acumulado,
   calculo_vp
 )
+```
+
+```{r}
+source("cod/prima.R")
+prima(primas_h[,26])
 ```
 
 
@@ -270,10 +274,10 @@ primas_p <- sapply(1:length(descripcion$edad),
                                                         descripcion$sexo[x]),
                                           0.07, 0.03) )
 ```
-
+  
 ```{r}
 nivelada <- primas_p %*% descripcion$n
-(nivelada[6]*100e6 + 12*(1.5e6*nivelada[4] + 3e6*nivelada[5]))/(12*(nivelada[1]+nivelada[2]+nivelada[3]))
+prima(nivelada)
 ```
 
 ```{r}
