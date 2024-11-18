@@ -327,15 +327,17 @@ source("cod/proy_prima.R")
 ```
 
 ```{r}
+n <- 100
 set.seed(70707)
 t <- proc.time()
-proy_prima_data <- proy_prima_par(10000, 0.05, 0.03)
+proy_prima_data <- proy_prima_par(n, 0.05, 0.03)
 proc.time()-t
 ```
+
 ```{r}
 raw <- proy_prima_data
 proy_prima_data <- list()
-for(i in 1:10000){
+for(i in 1:n){
   proy_prima_data[[i]] <- raw[,,i]
 }
 ```
@@ -344,7 +346,6 @@ for(i in 1:10000){
 ```{r}
 primas_est <- sapply(proy_prima_data, function(x) sapply(
   1:89, function(y) prima(x[y, ])))
-write_xlsx(primas_est, "res/primas_est.xlsx")
 est_mean <- sapply(1:89, function(x) mean(primas_est[x, ]))
 est_perc <- sapply(1:89, function(x) quantile(primas_est[x, ], 0.995))
 ```
@@ -358,7 +359,8 @@ datos <- data.frame(x = descripcion$edad,
     sexo == 1 ~ "Hombres",
     sexo == 2 ~ "Mujeres"
   ))
-
+write_xlsx(datos, "res/primas_est.xlsx")
+datos <- read_xlsx("res/primas_est.xlsx")
 ```
 
 ```{r}
