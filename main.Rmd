@@ -552,8 +552,8 @@ fig <- ggplot(media[[1]], aes(x = x)) +
   theme_minimal() +
   labs(
     title = "Media de hombres en cada estado",
-    x = "Edad",
-    y = "Valor"
+    x = "Año",
+    y = "Personas"
   ) +
   scale_color_manual(values = c(
     "Able" = "green",
@@ -582,8 +582,8 @@ fig <- ggplot(media[[2]], aes(x = x)) +
   theme_minimal() +
   labs(
     title = "Media de mujeres en cada estado",
-    x = "Edad",
-    y = "Valor"
+    x = "Año",
+    y = "Personas"
   ) +
   scale_color_manual(values = c(
     "Able" = "green",
@@ -612,8 +612,8 @@ fig <- ggplot(percent.995[[1]], aes(x = x)) +
   theme_minimal() +
   labs(
     title = "Percentil 99.5 de Hombres en cada estado",
-    x = "Edad",
-    y = "Valor"
+    x = "Año",
+    y = "Personas"
   ) +
   scale_color_manual(values = c(
     "Able" = "green",
@@ -642,8 +642,8 @@ fig <- ggplot(percent.995[[2]], aes(x = x)) +
   theme_minimal() +
   labs(
     title = "Percentil 99.5 de mujeres en cada estado",
-    x = "Edad",
-    y = "Valor"
+    x = "Año",
+    y = "Personas"
   ) +
   scale_color_manual(values = c(
     "Able" = "green",
