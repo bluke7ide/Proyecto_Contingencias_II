@@ -65,7 +65,7 @@ proy_prima <- function(interes, inflacion) {
 #' @param interes tasa de interés a tomar
 #' @param inflacion tasa de inflación a tomar
 proy_prima_par <- function(n, interes, inflacion) {
-  cl <- makeCluster(detectCores()/2) 
+  cl <- makeCluster(2) 
   clusterExport(
     cl,
     varlist = c("descripcion", "lista", "proy_prima", "interes", "inflacion"),
