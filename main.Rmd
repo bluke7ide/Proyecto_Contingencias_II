@@ -298,7 +298,7 @@ proc.time()-t
 ## Análisis de sensibilidad
 ```{r}
 # names <- paste(as.character(3:7), "%", sep = "")
-# tabla <- sapply(3:7/100,  function(x) sapply(3:7/100, function(y) prima_n(x, y)))
+# tabla <- sapply(3:7/100,  function(x) sapply(1:5/100, function(y) prima_n(x, y)))
 # tabla <- data.frame(tabla, row.names = names)
 # colnames(tabla) <- names
 # write_xlsx(tabla, "res/sensibilidad.xlsx")
