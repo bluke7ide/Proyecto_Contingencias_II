@@ -327,39 +327,39 @@ source("cod/proy_prima.R")
 ```
 
 ```{r}
-n <- 100000
-set.seed(70707)
-t <- proc.time()
-proy_prima_data <- proy_prima_par(n, 0.05, 0.03)
-proc.time()-t
+# n <- 100000
+# set.seed(70707)
+# t <- proc.time()
+# proy_prima_data <- proy_prima_par(n, 0.05, 0.03)
+# proc.time()-t
 ```
 
 ```{r}
-raw <- proy_prima_data
-proy_prima_data <- list()
-for(i in 1:n){
-  proy_prima_data[[i]] <- raw[,,i]
-}
+# raw <- proy_prima_data
+# proy_prima_data <- list()
+# for(i in 1:n){
+#   proy_prima_data[[i]] <- raw[,,i]
+# }
 ```
 
 ### Proyección de primas
 ```{r}
-primas_est <- sapply(proy_prima_data, function(x) sapply(
-  1:89, function(y) prima(x[y, ])))
-est_mean <- sapply(1:89, function(x) mean(primas_est[x, ]))
-est_perc <- sapply(1:89, function(x) quantile(primas_est[x, ], 0.995))
+# primas_est <- sapply(proy_prima_data, function(x) sapply(
+#   1:89, function(y) prima(x[y, ])))
+# est_mean <- sapply(1:89, function(x) mean(primas_est[x, ]))
+# est_perc <- sapply(1:89, function(x) quantile(primas_est[x, ], 0.995))
 ```
 
 ```{r}
-datos <- data.frame(x = descripcion$edad, 
-                    sexo = descripcion$sexo,
-                    mean = est_mean,
-                    perc = est_perc) %>%
-  mutate(sexo = case_when(
-    sexo == 1 ~ "Hombres",
-    sexo == 2 ~ "Mujeres"
-  ))
-write_xlsx(datos, "res/primas_est.xlsx")
+# datos <- data.frame(x = descripcion$edad, 
+#                     sexo = descripcion$sexo,
+#                     mean = est_mean,
+#                     perc = est_perc) %>%
+#   mutate(sexo = case_when(
+#     sexo == 1 ~ "Hombres",
+#     sexo == 2 ~ "Mujeres"
+#   ))
+# write_xlsx(datos, "res/primas_est.xlsx")
 datos <- read_xlsx("res/primas_est.xlsx")
 ```
 
@@ -388,8 +388,8 @@ fig %>% ggplotly()
 
 ### Proyección de prima nivelada
 ```{r}
-primas_estniv <- sapply(proy_prima_data, function(x) prima(descripcion$n %*% x))
-write_xlsx(data.frame(primas_estniv), "res/prima_estniv.xlsx")
+# primas_estniv <- sapply(proy_prima_data, function(x) prima(descripcion$n %*% x))
+# write_xlsx(data.frame(primas_estniv), "res/prima_estniv.xlsx")
 primas_estniv <- read_xlsx("res/prima_estniv.xlsx")
 ```
 
@@ -400,17 +400,17 @@ as.double(quantile(primas_estniv[[1]], 0.995))
 
 ### Pérdida máxima probable
 ```{r}
-pmp <- data.frame(x = descripcion$edad, sexo = descripcion$sexo, pmp = 0)
-for(fila in 1:89){
-  perdida <- c(0,0,0)
-  for(col in 4:6){
-    data <- sapply(proy_prima_data, function(mat) mat[fila, col])
-    perdida[col-3] <- quantile(data, 0.975)
-  }
-  pmp$pmp[fila] <- (perdida[1]*1e6 + perdida[2]*2e6 + perdida[3]*5e6)*12
-}
-write_xlsx(pmp, "res/pmp.xlsx")
-
+# pmp <- data.frame(x = descripcion$edad, sexo = descripcion$sexo, pmp = 0)
+# for(fila in 1:89){
+#   perdida <- c(0,0,0)
+#   for(col in 4:6){
+#     data <- sapply(proy_prima_data, function(mat) mat[fila, col])
+#     perdida[col-3] <- quantile(data, 0.975)
+#   }
+#   pmp$pmp[fila] <- (perdida[1]*1e6 + perdida[2]*2e6 + perdida[3]*5e6)*12
+# }
+# write_xlsx(pmp, "res/pmp.xlsx")
+pmp <- read_xlsx("res/pmp.xlsx")
 as.double((pmp$pmp %*% descripcion$n)/5000)
 ```
 De referencia, el valor presente de las entradas es de 140e6 por persona.
@@ -418,7 +418,14 @@ De referencia, el valor presente de las entradas es de 140e6 por persona.
 ```{r, echo = FALSE, message=FALSE, warning=FALSE}
 rm(proy_prima,
    proy_prima_par,
-   proy_prima_data)
+   proy_prima_data,
+   primas_est,
+   primas_estniv,
+   est_mean,
+   est_perc,
+   perdida,
+   pmp,
+   datos)
 ```
 
 
@@ -480,7 +487,6 @@ rm(interes,
    proyeccion,
    proyeccion_par,
    prima,
-   flujos,
    t,
    nivelada)
 ```
@@ -508,6 +514,10 @@ source("cod/resumen_estoc.R")
 ```{r}
 # write_xlsx(media, "res/media.xlsx")
 # write_xlsx(percent.995, "res/percentil.xlsx")
+```
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+rm(flujos)
 ```
 
 ## Leer las proyecciones
